@@ -17,7 +17,7 @@ git clone git@github.com:muellerberndt/micro-gpt.git
 cd micro-gpt
 pip install -r requirements.txt
 export OPENAI_API_KEY=[YOUR_API_KEY]
-pythin micro-gpt <objective>
+python micro-gpt <objective>
 ```
 
 ### Examples
