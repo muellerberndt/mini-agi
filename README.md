@@ -1,7 +1,7 @@
 # MicroGPT
 
 <p align="center">
-	<img src="/static/autogpt.jpg.png" height="320px"/>
+	<img src="/static/avatar.jpg" height="320px"/>
 </p>
 
 A minimal autonomous agent.
