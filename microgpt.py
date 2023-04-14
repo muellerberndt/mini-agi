@@ -9,7 +9,7 @@ from contextlib import redirect_stdout, redirect_stderr
 
 MODEL = "gpt-4"
 MAX_TOKENS = 8000
-SYSTEM_PROMPT = "You are an autonomous agent that exexutes shell commands and Python code to achieve an objective."
+SYSTEM_PROMPT = "You are an autonomous agent that executes shell commands and Python code to achieve an objective."
 INSTRUCTIONS = '''
 Carefully consider the next command to execute and pass it to the agent. Execute Python code by setting "type" to Python or shell commands by setting "type" to shell.
 All Python code must have an output "print" statement. Do NOT precede shell commands with an exclamation mark. Use only non-interactive shell commands.
