@@ -44,6 +44,30 @@ Prompting gpt-4...
 MicroGPT: The objective has been accomplished by simulating the pizza ordering process using the mock_order_salami_pizza() function
 ```
 
+#### Ordering Salami pizza (for real this time)
+```
+% python microgpt.py "Order some salami Pizza from Uber Eats"
+Prompting gpt-4...
+MicroGPT: First, I will check if we have the Uber Eats python SDK installed
+Press enter to perform this action or abort by typing feedback: 
+Prompting gpt-4...
+MicroGPT: I need to check if Uber Eats SDK is installed or not, it is not in memory, so I should install it
+Press enter to perform this action or abort by typing feedback: 
+Prompting gpt-4...
+MicroGPT: Now that we have the Uber Rides SDK installed, let's import it and set up our Uber Rides Client with API credentials
+Press enter to perform this action or abort by typing feedback: 
+Prompting gpt-4...
+MicroGPT: Now I need to verify if we have the Uber Eats API access.
+Press enter to perform this action or abort by typing feedback: 
+Prompting gpt-4...
+MicroGPT: I need to ask the user for the API key in order to proceed with ordering the pizza.
+Press enter to perform this action or abort by typing feedback: Prompting gpt-4...
+MicroGPT: Now I will wait for the user to provide their Uber Eats API key before proceeding further.
+Press enter to perform this action or abort by typing feedback: 
+```
+
+I didn't continue from here as I don't have an Uber Eats API key.
+
 #### Summarizing a website
 
 ```
