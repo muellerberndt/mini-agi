@@ -44,9 +44,6 @@ def append_to_memory(content: str):
         chunk_size = int(avg_chars_per_token * SUMMARIZER_CHUNK_SIZE)
         chunks = textwrap.wrap(memory, chunk_size)
         summary_size = int(MAX_TOKENS / 2 / len(chunks))
-
-        print(f"Summarizing memory in {len(chunks)} chunks of {chunk_size} characters")
-
         memory = ""
 
         for chunk in chunks:
