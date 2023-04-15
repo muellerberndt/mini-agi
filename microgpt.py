@@ -38,14 +38,13 @@ def append_to_memory(content: str):
     if (num_tokens > MAX_TOKENS/2):
         approx_letters_per_token = len(memory) / num_tokens
 
-        memory = memory[:int((MAX_TOKENS - 100) * approx_letters_per_token)]
+        memory = memory[len(memory) - int((MAX_TOKENS - 100) * approx_letters_per_token):]
 
-        print("Summarizing memory")
         rs = o.ChatCompletion.create(
             model=MODEL,
             messages = [
                 {"role": "user", "content": f"Shorten the following memory of an autonomous agent from a first person perspective {MAX_TOKENS/2} tokens max.:\n{memory}"},
-                {"role": "user", "content": f"Try to retain all semantic information, such as website content, important data points and hyper-links."}, 
+                {"role": "user", "content": f"Do your best to retain all semantic information, such as website content, important data points and hyper-links."}, 
             ])
 
         memory = rs['choices'][0]['message']['content']
@@ -55,7 +54,6 @@ if __name__ == "__main__":
 
     while(True):
         print(f"Prompting {MODEL}...")
-        print(f"MEMORY: \n{memory}")
 
         rs = o.ChatCompletion.create(
             model=MODEL,
