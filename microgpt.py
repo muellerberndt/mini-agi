@@ -17,7 +17,7 @@ INSTRUCTIONS = '''
 Carefully consider your next command.
 All Python code run with execute_python must have an output "print" statement.
 Use only non-interactive shell commands.
-Respond with "DONE!" when the objective was accomplished.
+Wheb you have achieved the objective and do not need to perform any more actions, repond only with OBJECTIVE ACHIEVED
 Otherwise, respond with a JSON-encoded dict containing one of the commands: execute_python, execute_shell, or web_search.
 
 {"thought": "[REASONING]", "cmd": "[COMMAND]", "arg": "[ARGUMENT]"}
@@ -69,7 +69,10 @@ if __name__ == "__main__":
 
         response_text = rs['choices'][0]['message']['content']
 
-        if  "DONE!" in response_text:
+        print(response_text)
+
+        if "OBJECTIVE ACHIEVED" in response_text:
+            print("Objective achieved.")
             quit()
         try:
             response = json.loads(response_text)
@@ -81,7 +84,7 @@ if __name__ == "__main__":
             append_to_memory(f"Seems like you responded with the wrong JSON format.\nError: {str(e)}")
             continue
 
-        _arg = arg.replace("\n", "\\n") if len(arg) < 64 else f"{arg[:64]}...".replace("\n", "\\n") 
+        _arg = arg.replace("\n", "\\n") if len(arg) < 64 else f"{arg[:64]}...".replace("\n", "\\n")
         print(f"MicroGPT: {thought}\nCmd: {command}, Arg: \"{_arg}\"")
         append_to_memory(f"You thought: {thought}\nYour command: {command}\nCmd argument:\n{arg}\nResult:")
         user_input = input('Press enter to perform this action or abort by typing feedback: ')
