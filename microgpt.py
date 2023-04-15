@@ -2,20 +2,19 @@ import sys
 import json
 import tiktoken
 import openai as o
-import requests
-from googlesearch import search
+from duckduckgo_search import ddg
 from io import StringIO
 import subprocess
 from contextlib import redirect_stdout
 
-MODEL = "gpt-3.5-turbo"
+MODEL = "gpt-4"
 MAX_TOKENS = 8000
 SYSTEM_PROMPT = "You are an autonomous agent who fulfills the users' objective."
 INSTRUCTIONS = '''
 Carefully consider the next command to execute and pass it to the agent. Execute Python code by setting "type" to Python or shell commands by setting "type" to shell.
 All Python code must have an output "print" statement. Do NOT precede shell commands with an exclamation mark. Use only non-interactive shell commands.
 Respond with "DONE!" when the objective was accomplished.
-Otherwise, respond with a JSON-encoded dict containing one of the commands: execute_python, execute_shell, or google.
+Otherwise, respond with a JSON-encoded dict containing one of the commands: execute_python, execute_shell, or web_search.
 
 {"thought": "REASONING", "cmd": "COMMAND", "arg": "ARGUMENT"}
 
@@ -50,6 +49,7 @@ if __name__ == "__main__":
 
     while(True):
         print(f"Prompting {MODEL}...")
+        print(memory)
         rs = o.ChatCompletion.create(
             model=MODEL,
             messages = [
@@ -60,6 +60,7 @@ if __name__ == "__main__":
             ])
 
         response_text = rs['choices'][0]['message']['content']
+        print(response_text)
 
         if response_text == "DONE!":
             quit()
@@ -89,9 +90,7 @@ if __name__ == "__main__":
             elif command == "execute_shell":
                 result = subprocess.run(arg, capture_output=True, shell=True)
                 append_to_memory(f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}\n")
-            elif command == "google":
-                append_to_memory("Search results:")
-                for j in search(arg, num=5):
-                    append_to_memory(j)
+            elif command == "web_search":
+                append_to_memory(ddg(arg, max_results=5))
         except Exception as e:
                 append_to_memory(f"Error executing command: {str(e)}")
