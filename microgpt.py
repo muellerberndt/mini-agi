@@ -20,7 +20,7 @@ Otherwise, respond with a JSON-encoded dict containing one of the commands: exec
 
 Example:
 
-{"First, I will search for websites relevant to salami pizza.", "cmd": "google", "arg": "salami pizza"}
+{"First, I will search for websites relevant to salami pizza.", "cmd": "web_search", "arg": "salami pizza"}
 
 IMPORTANT: ALWAYS RESPOND ONLY WITH THIS EXACT JSON FORMAT. DOUBLE-CHECK YOUR RESPONSE TO MAKE SURE IT CONTAINS VALID JSON. DO NOT INCLUDE ANY EXTRA TEXT WITH THE RESPONSE.
 '''
