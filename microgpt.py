@@ -99,10 +99,8 @@ if __name__ == "__main__":
                 append_to_memory("Search results:")
                 for j in search(arg, num=5):
                     append_to_memory(j)
-                print("Google completed")
             elif command == "get_url":
                 response = requests.get(arg)
-                print(response)
                 append_to_memory(f"STATUS CODE: {response.status_code}\nCONTENT:\n{response.content}")
         except Exception as e:
                 append_to_memory(f"Error executing command: {str(e)}")
