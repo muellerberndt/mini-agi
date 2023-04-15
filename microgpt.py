@@ -7,7 +7,7 @@ from io import StringIO
 import subprocess
 from contextlib import redirect_stdout
 
-MODEL = "gpt-3.5-turbo"
+MODEL = "gpt-4"
 MAX_TOKENS = 8000
 SYSTEM_PROMPT = "You are an autonomous agent who fulfills the users' objective."
 INSTRUCTIONS = '''
