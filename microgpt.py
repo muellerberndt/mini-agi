@@ -49,7 +49,6 @@ if __name__ == "__main__":
 
     while(True):
         print(f"Prompting {MODEL}...")
-        print(memory)
         rs = o.ChatCompletion.create(
             model=MODEL,
             messages = [
@@ -60,7 +59,6 @@ if __name__ == "__main__":
             ])
 
         response_text = rs['choices'][0]['message']['content']
-        print(response_text)
 
         if response_text == "DONE!":
             quit()
