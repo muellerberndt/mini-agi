@@ -50,22 +50,16 @@ if __name__ == "__main__":
 
     while(True):
         print(f"Prompting {MODEL}...")
-
-        print(f"\nMEMORY:\n{memory}")
-
         rs = o.ChatCompletion.create(
             model=MODEL,
             messages = [
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": f"OBJECTIVE:{objective}"},
                 {"role": "user", "content": f"MEMORY:\n{memory}"},
-                {"role": "user", "content": f"PREVIOUS_CODE:\n{code}"},
                 {"role": "user", "content": f"INSTRUCTIONS:\n{INSTRUCTIONS}"},
             ])
 
         response_text = rs['choices'][0]['message']['content']
-
-        print(response_text)
 
         if response_text == "DONE!":
             quit()
