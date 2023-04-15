@@ -1,39 +1,61 @@
-import re
 import sys
 import json
 import tiktoken
 import openai as o
+import requests
+from googlesearch import search
 from io import StringIO
 import subprocess
-from contextlib import redirect_stdout, redirect_stderr
+from contextlib import redirect_stdout
 
 MODEL = "gpt-4"
 MAX_TOKENS = 8000
-SYSTEM_PROMPT = "You are an autonomous agent that executes shell commands and Python code to achieve an objective."
+SYSTEM_PROMPT = "You are an autonomous agent who fulfills the users' objective."
 INSTRUCTIONS = '''
 Carefully consider the next command to execute and pass it to the agent. Execute Python code by setting "type" to Python or shell commands by setting "type" to shell.
 All Python code must have an output "print" statement. Do NOT precede shell commands with an exclamation mark. Use only non-interactive shell commands.
-Install packages with '!pip install <package>'
-Respond with "DONE!" when the objective was accomplished. Otherwise, respond with a single JSON-encoded dict.
-{
-    "thought": "YOUR REASONING",
-    "code": "[COMMAND LINE OR PYTHON CODE]",
-    "type": "[shell OR python]"}
-}
+Respond with "DONE!" when the objective was accomplished.
+Otherwise, respond with a JSON-encoded dict containing one of the commands: execute_python, execute_shell, get_url, or google. Use "get_url" to retrieve websites,
+
+{"thought": "REASONING", "cmd": "COMMAND", "arg": "ARGUMENT"}
+
+Example:
+
+{"First, I will search for websites relevant to salami pizza.", "cmd": "google", "arg": "salami pizza"}
+
 IMPORTANT: ALWAYS RESPOND ONLY WITH THIS EXACT JSON FORMAT. DOUBLE-CHECK YOUR RESPONSE TO MAKE SURE IT CONTAINS VALID JSON. DO NOT INCLUDE ANY EXTRA TEXT WITH THE RESPONSE.
 '''
 
 objective = sys.argv[1]
+memory = ""
 
-def install(package) -> str:
-    return subprocess.check_output([sys.executable, "-m", "pip", "install", package]).decode('utf-8')
+def append_to_memory(content: str):
+    global memory
+    memory += f"\n{content}\n"
+
+    num_tokens = len(tiktoken.encoding_for_model(MODEL).encode(memory))
+
+    if (num_tokens > MAX_TOKENS/2):
+        approx_letters_per_token = len(memory) / num_tokens
+
+        memory = memory[:int((MAX_TOKENS - 100) * approx_letters_per_token)]
+
+        print("Summarizing memory")
+        rs = o.ChatCompletion.create(
+            model=MODEL,
+            messages = [
+                {"role": "user", "content": f"Shorten the following memory of an autonomous agent from a first person perspective {MAX_TOKENS/2} tokens max.:\n{memory}"},
+                {"role": "user", "content": f"Try to retain all semantic information, such as website content, important data points and hyper-links."}, 
+            ])
+
+        memory = rs['choices'][0]['message']['content']
 
 if __name__ == "__main__":
-    memory = ""
     code = ""
 
     while(True):
         print(f"Prompting {MODEL}...")
+        print(f"MEMORY: \n{memory}")
 
         rs = o.ChatCompletion.create(
             model=MODEL,
@@ -45,61 +67,44 @@ if __name__ == "__main__":
                 {"role": "user", "content": f"INSTRUCTIONS:\n{INSTRUCTIONS}"},
             ])
 
-        response_text = rs['choices'][0]['message']['content']  
+        response_text = rs['choices'][0]['message']['content']
 
         if response_text == "DONE!":
             quit()
-
         try:
             response = json.loads(response_text)
             thought = response["thought"]
-            code = response["code"]
-            type = response["type"]
+            command = response["cmd"]
+            arg = response["arg"]
         except Exception as e:
             print(f"Unable to parse response:\n{response_text}\n")
-            memory += f"\nInvalid JSON response. Respond only with the correct JSON format! Error: {str(e)}\n"
+            append_to_memory(f"Invalid JSON response. Respond only with the correct JSON format! Error: {str(e)}")
             continue
 
         print(f"MicroGPT: {thought}")
-        memory += f"\nThought:{thought}\nCode:{code}\nResult: "
+        append_to_memory(f"THOUGHT: {thought}\nCMD: {command}\nARG:\n{arg}\nRESULT:")
         user_input = input('Press enter to perform this action or abort by typing feedback: ')
 
         if (len(user_input) > 0):
-            memory += f"\nUser feedback: {user_input}\n"
+            append_to_memory(f"User feedback: {user_input}")
             continue
-
-        if (code) and (len(code) > 0):
-            match = re.search("^!pip install (\S+)", code)
-            if (match):
-                try:
-                    f = StringIO()
-                    with redirect_stdout(f):
-                        with redirect_stderr(f):
-                            memory += install(match.group(1))
-                except Exception as e:
-                    memory += str(e)
-            else:
-                if (type == "python"):
-                    f = StringIO()
-                    try:
-                        with redirect_stdout(f):
-                            exec(code)
-                        memory += f.getvalue()
-                    except Exception as e:
-                        memory += str(e)
-                else:
-                    result = subprocess.run(code, capture_output=True, shell=True)
-                    memory += f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}\n"
-
-            while(len(tiktoken.encoding_for_model(MODEL).encode(memory)) > MAX_TOKENS - 100):
-                memory = memory[:len(memory)-100]
-
-            if (len(tiktoken.encoding_for_model(MODEL).encode(memory)) > MAX_TOKENS - MAX_TOKENS/2):
-                rs = o.ChatCompletion.create(
-                    model=MODEL,
-                    messages = [
-                        {"role": "user", "content": f"Summarize the following memory contents of an autonomous agent using bullet points in first person to {MAX_TOKENS/2} tokens max.:\n{memory}"},
-                        {"role": "user", "content": f"Retain tool outputs if possible."}, 
-                    ])
-
-                memory = rs['choices'][0]['message']['content']  
+        try:
+            if (command == "execute_python"):
+                f = StringIO()
+                with redirect_stdout(f):
+                    exec(arg)
+                append_to_memory(f.getvalue())
+            elif command == "execute_shell":
+                result = subprocess.run(arg, capture_output=True, shell=True)
+                append_to_memory("STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}\n")
+            elif command == "google":
+                append_to_memory("Search results:")
+                for j in search(arg, num=5):
+                    append_to_memory(j)
+                print("Google completed")
+            elif command == "get_url":
+                response = requests.get(arg)
+                print(response)
+                append_to_memory(f"STATUS CODE: {response.status_code}\nCONTENT:\n{response.content}")
+        except Exception as e:
+                append_to_memory(f"Error executing command: {str(e)}")
