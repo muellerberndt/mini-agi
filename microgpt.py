@@ -38,8 +38,8 @@ def append_to_memory(content: str):
         rs = o.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages = [
-                {"role": "user", "content": f"Shorten the following memory chunk of an autonomous agent from a first person perspective {int(MAX_TOKENS/3)} tokens max.:\n{memory}"},
-                {"role": "user", "content": f"Do your best to retain all semantic information including tasks performed by the agent, website content, important data points and hyper-links."}, 
+                {"role": "user", "content": f"Shorten the following memory chunk of an autonomous agent from a first person perspective, {int(MAX_TOKENS/3)} tokens max."},
+                {"role": "user", "content": f"Do your best to retain all semantic information including tasks performed by the agent, website content, important data points and hyper-links:\n\n{memory}"}, 
             ])
 
         memory = rs['choices'][0]['message']['content']
