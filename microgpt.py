@@ -7,7 +7,7 @@ from io import StringIO
 import subprocess
 from contextlib import redirect_stdout
 
-MODEL = "gpt-4"
+MODEL = "gpt-3.5-turbo"
 MAX_TOKENS = 8000
 SYSTEM_PROMPT = "You are an autonomous agent who fulfills the users' objective."
 INSTRUCTIONS = '''
@@ -45,8 +45,6 @@ def append_to_memory(content: str):
         memory = rs['choices'][0]['message']['content']
 
 if __name__ == "__main__":
-    code = ""
-
     while(True):
         print(f"Prompting {MODEL}...")
         rs = o.ChatCompletion.create(
@@ -72,7 +70,8 @@ if __name__ == "__main__":
             append_to_memory(f"Invalid JSON response. Respond only with the correct JSON format! Error: {str(e)}")
             continue
 
-        print(f"MicroGPT: {thought}")
+        _arg = arg.replace("\n", "\\n") if len(arg) < 64 else f"{arg[:64]}...".replace("\n", "\\n") 
+        print(f"MicroGPT: {thought}\nCmd: {command}, Arg: \"{_arg}\"")
         append_to_memory(f"THOUGHT: {thought}\nCMD: {command}\nARG:\n{arg}\nRESULT:")
         user_input = input('Press enter to perform this action or abort by typing feedback: ')
 
