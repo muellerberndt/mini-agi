@@ -48,7 +48,7 @@ def append_to_memory(content: str):
 
         for chunk in chunks:
             rs = o.ChatCompletion.create(
-                model="SUMMARIZER_MODEL",
+                model=SUMMARIZER_MODEL,
                 messages = [
                     {"role": "user", "content": f"Shorten the following memory chunk of an autonomous agent from a first person perspective, {summary_size} tokens max."},
                     {"role": "user", "content": f"Do your best to retain all semantic information including tasks performed by the agent, website content, important data points and hyper-links:\n\n{chunk}"}, 
