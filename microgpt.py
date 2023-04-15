@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
         response_text = rs['choices'][0]['message']['content']
 
-        if response_text == "DONE!":
+        if  "DONE!" in response_text:
             quit()
         try:
             response = json.loads(response_text)
