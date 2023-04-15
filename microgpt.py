@@ -8,14 +8,14 @@ from io import StringIO
 import subprocess
 from contextlib import redirect_stdout
 
-MODEL = "gpt-4"
+MODEL = "gpt-3.5-turbo"
 MAX_TOKENS = 8000
 SYSTEM_PROMPT = "You are an autonomous agent who fulfills the users' objective."
 INSTRUCTIONS = '''
 Carefully consider the next command to execute and pass it to the agent. Execute Python code by setting "type" to Python or shell commands by setting "type" to shell.
 All Python code must have an output "print" statement. Do NOT precede shell commands with an exclamation mark. Use only non-interactive shell commands.
 Respond with "DONE!" when the objective was accomplished.
-Otherwise, respond with a JSON-encoded dict containing one of the commands: execute_python, execute_shell, get_url, or google. Use "get_url" to retrieve websites,
+Otherwise, respond with a JSON-encoded dict containing one of the commands: execute_python, execute_shell, or google.
 
 {"thought": "REASONING", "cmd": "COMMAND", "arg": "ARGUMENT"}
 
@@ -35,16 +35,12 @@ def append_to_memory(content: str):
 
     num_tokens = len(tiktoken.encoding_for_model(MODEL).encode(memory))
 
-    if (num_tokens > MAX_TOKENS/2):
-        approx_letters_per_token = len(memory) / num_tokens
-
-        memory = memory[len(memory) - int((MAX_TOKENS - 100) * approx_letters_per_token):]
-
+    if (num_tokens > MAX_TOKENS / 2):
         rs = o.ChatCompletion.create(
-            model=MODEL,
+            model="gpt-3.5-turbo",
             messages = [
-                {"role": "user", "content": f"Shorten the following memory of an autonomous agent from a first person perspective {MAX_TOKENS/2} tokens max.:\n{memory}"},
-                {"role": "user", "content": f"Do your best to retain all semantic information, such as website content, important data points and hyper-links."}, 
+                {"role": "user", "content": f"Shorten the following memory chunk of an autonomous agent from a first person perspective {int(MAX_TOKENS/3)} tokens max.:\n{memory}"},
+                {"role": "user", "content": f"Do your best to retain all semantic information including tasks performed by the agent, website content, important data points and hyper-links."}, 
             ])
 
         memory = rs['choices'][0]['message']['content']
@@ -54,6 +50,8 @@ if __name__ == "__main__":
 
     while(True):
         print(f"Prompting {MODEL}...")
+
+        print(f"\nMEMORY:\n{memory}")
 
         rs = o.ChatCompletion.create(
             model=MODEL,
@@ -66,6 +64,8 @@ if __name__ == "__main__":
             ])
 
         response_text = rs['choices'][0]['message']['content']
+
+        print(response_text)
 
         if response_text == "DONE!":
             quit()
@@ -84,7 +84,7 @@ if __name__ == "__main__":
         user_input = input('Press enter to perform this action or abort by typing feedback: ')
 
         if (len(user_input) > 0):
-            append_to_memory(f"User feedback: {user_input}")
+            append_to_memory(f"User feedback: {user_input}")    
             continue
         try:
             if (command == "execute_python"):
@@ -94,13 +94,10 @@ if __name__ == "__main__":
                 append_to_memory(f.getvalue())
             elif command == "execute_shell":
                 result = subprocess.run(arg, capture_output=True, shell=True)
-                append_to_memory("STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}\n")
+                append_to_memory(f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}\n")
             elif command == "google":
                 append_to_memory("Search results:")
                 for j in search(arg, num=5):
                     append_to_memory(j)
-            elif command == "get_url":
-                response = requests.get(arg)
-                append_to_memory(f"STATUS CODE: {response.status_code}\nCONTENT:\n{response.content}")
         except Exception as e:
                 append_to_memory(f"Error executing command: {str(e)}")
