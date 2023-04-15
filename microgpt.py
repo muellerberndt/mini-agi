@@ -87,7 +87,7 @@ if __name__ == "__main__":
         user_input = input('Press enter to perform this action or abort by typing feedback: ')
 
         if (len(user_input) > 0):
-            append_to_memory(f"User feedback: {user_input}")
+            append_to_memory(f"The user responded: {user_input}. Take this comment into consideration.")
             continue
         try:
             if (command == "execute_python"):
