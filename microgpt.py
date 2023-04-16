@@ -2,6 +2,8 @@ import os
 import sys
 import json
 import openai
+from bs4 import BeautifulSoup
+from urllib.request import urlopen
 from duckduckgo_search import ddg
 from io import StringIO
 import subprocess
@@ -21,11 +23,12 @@ Carefully consider your next command.
 All Python code run with execute_python must have an output "print" statement.
 Use only non-interactive shell commands.
 When you have achieved the objective and do not need to perform any more actions, repond only with OBJECTIVE ACHIEVED
-Otherwise, respond with a JSON-encoded dict containing one of the commands: execute_python, execute_shell, or web_search.
+Otherwise, respond with a JSON-encoded dict containing one of the commands: execute_python, execute_shell, web_search or web_scrape.
 Escape newlines in Python code.
 {"thought": "[REASONING]", "cmd": "[COMMAND]", "arg": "[ARGUMENT]"}
-Example:
+Examples:
 {"First, I will search for websites relevant to salami pizza.", "cmd": "web_search", "arg": "salami pizza"}
+{"I am going to scrape information about Apples.", "cmd": "web_scrape", "arg": "https://en.wikipedia.org/wiki/Apple"}
 IMPORTANT: ALWAYS RESPOND ONLY WITH THIS EXACT JSON FORMAT. DOUBLE-CHECK YOUR RESPONSE TO MAKE SURE IT CONTAINS VALID JSON. DO NOT INCLUDE ANY EXTRA TEXT WITH THE RESPONSE.
 '''
 
@@ -92,5 +95,10 @@ if __name__ == "__main__":
                 memory.add(f"{mem}STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
             elif command == "web_search":
                 memory.add(f"{mem}{ddg(arg, max_results=5)}")
+            elif command == "web_scrape":
+                html = urlopen(arg).read()
+                response_text = memory.summarize_memory_if_large(BeautifulSoup(html).get_text())
+                memory.add(f"{mem}{response_text}")
+
         except Exception as e:
                 memory.add(f"{mem}The command returned an error:\n{str(e)}\nYou should fix the command.")

@@ -34,6 +34,29 @@ class PineconeMemory():
         if os.getenv("CLEAR_DB_ON_START") in ['true', '1', 't', 'y', 'yes']:
             self.index.delete(deleteAll='true')
 
+    def summarize_memory_if_large(self, memory:str) -> str:
+        num_tokens = len(tiktoken.encoding_for_model(self.summarizer_model).encode(memory))
+
+        if num_tokens > self.max_context_size:
+            avg_chars_per_token = len(memory) / num_tokens
+            chunk_size = int(avg_chars_per_token * self.summarizer_chunk_size)
+            chunks = textwrap.wrap(memory, chunk_size)
+            summary_size = int(self.max_context_size / len(chunks))
+            memory = ""
+
+            print("Summarizing memory, {} chunks.".format(len(chunks)))
+
+            for chunk in chunks:
+                rs = openai.ChatCompletion.create(
+                    model=self.summarizer_model,
+                    messages = [
+                        {"role": "user", "content": f"Shorten the following memory chunk of an autonomous agent from a first person perspective, {summary_size} tokens max."},
+                        {"role": "user", "content": f"Do your best to retain all semantic information including tasks performed by the agent, website content, important data points and hyper-links:\n\n{chunk}"}, 
+                    ])
+                memory += rs['choices'][0]['message']['content']
+        
+        return memory
+        
 
     def add(self, data: str):
         vector = create_ada_embedding(data)
@@ -51,23 +74,6 @@ class PineconeMemory():
         results_list = [str(item["metadata"]["data"]) for item in sorted_results]
         context = "\n".join(results_list)
 
-        num_tokens = len(tiktoken.encoding_for_model(self.summarizer_model).encode(context))
-
-        # Summarize memory contents if they're too large to fit into the LLM context
-        if (num_tokens > self.max_context_size):
-            avg_chars_per_token = len(context) / num_tokens
-            chunk_size = int(avg_chars_per_token * self.summarizer_chunk_size)
-            chunks = textwrap.wrap(context, chunk_size)
-            summary_size = int(self.max_context_size / len(chunks))
-            context = ""
-
-            for chunk in chunks:
-                rs = openai.ChatCompletion.create(
-                    model=self.summarizer_model,
-                    messages = [
-                        {"role": "user", "content": f"Shorten the following memory chunk of an autonomous agent from a first person perspective, {summary_size} tokens max."},
-                        {"role": "user", "content": f"Do your best to retain all semantic information including tasks performed by the agent, website content, important data points and hyper-links:\n\n{chunk}"}, 
-                    ])
-                context += rs['choices'][0]['message']['content']
+        context = self.summarize_memory_if_large(context)
 
         return context
