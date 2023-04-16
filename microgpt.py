@@ -36,6 +36,7 @@ if __name__ == "__main__":
 
     model = os.getenv("MODEL")
     objective = sys.argv[1]
+    max_memory_item_size = int(os.getenv("MAX_MEMORY_ITEM_SIZE"))
     memory = PineconeMemory()
     context = objective
     thought = "I awakened moments ago."
@@ -62,7 +63,7 @@ if __name__ == "__main__":
         if debug:
             print(f"RAW RESPONSE:\n{response_text}")
 
-        if "OBJECTIVE ACHIEVED" in response_text:
+        if response_text == "OBJECTIVE ACHIEVED":
             print("Objective achieved.")
             quit()
         try:
@@ -84,21 +85,21 @@ if __name__ == "__main__":
         if (len(user_input) > 0):
             memory.add(f"{mem}The user responded: {user_input}. Take this comment into consideration.")
             continue
-        try:
-            if (command == "execute_python"):
-                f = StringIO()
-                with redirect_stdout(f):
-                    exec(arg)
-                memory.add(f"{mem}{f.getvalue()}")
-            elif command == "execute_shell":
-                result = subprocess.run(arg, capture_output=True, shell=True)
-                memory.add(f"{mem}STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
-            elif command == "web_search":
-                memory.add(f"{mem}{ddg(arg, max_results=5)}")
-            elif command == "web_scrape":
-                html = urlopen(arg).read()
-                response_text = memory.summarize_memory_if_large(BeautifulSoup(html).get_text())
-                memory.add(f"{mem}{response_text}")
+        # try:
+        if (command == "execute_python"):
+            f = StringIO()
+            with redirect_stdout(f):
+                exec(arg)
+            memory.add(f"{mem}{f.getvalue()}")
+        elif command == "execute_shell":
+            result = subprocess.run(arg, capture_output=True, shell=True)
+            memory.add(f"{mem}STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
+        elif command == "web_search":
+            memory.add(f"{mem}{ddg(arg, max_results=5)}")
+        elif command == "web_scrape":
+            html = urlopen(arg).read()
+            response_text = memory.summarize_memory_if_large(BeautifulSoup(html, features="lxml").get_text(), max_memory_item_size)
+            memory.add(f"{mem}{response_text}")
 
-        except Exception as e:
-                memory.add(f"{mem}The command returned an error:\n{str(e)}\nYou should fix the command.")
+        # except Exception as e:
+        #         memory.add(f"{mem}The command returned an error:\n{str(e)}\nYou should fix the command.")

@@ -34,14 +34,14 @@ class PineconeMemory():
         if os.getenv("CLEAR_DB_ON_START") in ['true', '1', 't', 'y', 'yes']:
             self.index.delete(deleteAll='true')
 
-    def summarize_memory_if_large(self, memory:str) -> str:
+    def summarize_memory_if_large(self, memory:str, max_tokens:int) -> str:
         num_tokens = len(tiktoken.encoding_for_model(self.summarizer_model).encode(memory))
 
-        if num_tokens > self.max_context_size:
+        if num_tokens > max_tokens:
             avg_chars_per_token = len(memory) / num_tokens
             chunk_size = int(avg_chars_per_token * self.summarizer_chunk_size)
             chunks = textwrap.wrap(memory, chunk_size)
-            summary_size = int(self.max_context_size / len(chunks))
+            summary_size = int(max_tokens / len(chunks))
             memory = ""
 
             print("Summarizing memory, {} chunks.".format(len(chunks)))
@@ -74,6 +74,6 @@ class PineconeMemory():
         results_list = [str(item["metadata"]["data"]) for item in sorted_results]
         context = "\n".join(results_list)
 
-        context = self.summarize_memory_if_large(context)
+        context = self.summarize_memory_if_large(context, self.max_context_size)
 
         return context
