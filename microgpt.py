@@ -6,8 +6,8 @@ from bs4 import BeautifulSoup
 from urllib.request import urlopen
 from duckduckgo_search import ddg
 from io import StringIO
-import subprocess
 from contextlib import redirect_stdout
+import subprocess
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -22,7 +22,7 @@ INSTRUCTIONS = '''
 Carefully consider your next command.
 All Python code run with execute_python must have an output "print" statement.
 Use only non-interactive shell commands.
-When you have achieved the objective and do not need to perform any more actions, repond only with OBJECTIVE ACHIEVED
+When you have achieved the objective, respond ONLY with the plaintext OBJECTIVE ACHIEVED (no JSON)
 Otherwise, respond with a JSON-encoded dict containing one of the commands: execute_python, execute_shell, web_search or web_scrape.
 Escape newlines in Python code.
 {"thought": "[REASONING]", "cmd": "[COMMAND]", "arg": "[ARGUMENT]"}
@@ -87,10 +87,10 @@ if __name__ == "__main__":
             continue
         try:
             if (command == "execute_python"):
-                f = StringIO()
-                with redirect_stdout(f):
+                _stdout = StringIO()
+                with redirect_stdout(_stdout):
                     exec(arg)
-                memory.add(f"{mem}{f.getvalue()}")
+                memory.add(f"{mem}{_stdout.getvalue()}")
             elif command == "execute_shell":
                 result = subprocess.run(arg, capture_output=True, shell=True)
                 memory.add(f"{mem}STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
