@@ -23,7 +23,7 @@ Carefully consider your next command.
 All Python code run with execute_python must have an output "print" statement.
 Use only non-interactive shell commands.
 When you have achieved the objective, respond ONLY with the plaintext OBJECTIVE ACHIEVED (no JSON)
-Otherwise, respond with a JSON-encoded dict containing one of the commands: execute_python, execute_shell, web_search or web_scrape.
+Otherwise, respond with a JSON-encoded dict containing one of the commands: execute_python, execute_shell, read_file, web_search or web_scrape.
 Escape newlines in Python code.
 {"thought": "[REASONING]", "cmd": "[COMMAND]", "arg": "[ARGUMENT]"}
 Examples:
@@ -100,5 +100,9 @@ if __name__ == "__main__":
                 html = urlopen(arg).read()
                 response_text = memory.summarize_memory_if_large(BeautifulSoup(html, features="lxml").get_text(), max_memory_item_size)
                 memory.add(f"{mem}{response_text}")
+            elif command == "read_file":
+                f = open(arg, "r")
+                file_content = memory.summarize_memory_if_large(f.read(), max_memory_item_size)
+                memory.add(f"{mem}{file_content}")
         except Exception as e:
                 memory.add(f"{mem}The command returned an error:\n{str(e)}\nYou should fix the command.")
