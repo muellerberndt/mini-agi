@@ -17,7 +17,7 @@ INSTRUCTIONS = '''
 Carefully consider your next command.
 All Python code run with execute_python must have an output "print" statement.
 Use only non-interactive shell commands.
-Wheb you have achieved the objective and do not need to perform any more actions, repond only with OBJECTIVE ACHIEVED
+When you have achieved the objective and do not need to perform any more actions, repond only with OBJECTIVE ACHIEVED
 Otherwise, respond with a JSON-encoded dict containing one of the commands: execute_python, execute_shell, or web_search.
 
 {"thought": "[REASONING]", "cmd": "[COMMAND]", "arg": "[ARGUMENT]"}
