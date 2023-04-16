@@ -85,21 +85,20 @@ if __name__ == "__main__":
         if (len(user_input) > 0):
             memory.add(f"{mem}The user responded: {user_input}. Take this comment into consideration.")
             continue
-        # try:
-        if (command == "execute_python"):
-            f = StringIO()
-            with redirect_stdout(f):
-                exec(arg)
-            memory.add(f"{mem}{f.getvalue()}")
-        elif command == "execute_shell":
-            result = subprocess.run(arg, capture_output=True, shell=True)
-            memory.add(f"{mem}STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
-        elif command == "web_search":
-            memory.add(f"{mem}{ddg(arg, max_results=5)}")
-        elif command == "web_scrape":
-            html = urlopen(arg).read()
-            response_text = memory.summarize_memory_if_large(BeautifulSoup(html, features="lxml").get_text(), max_memory_item_size)
-            memory.add(f"{mem}{response_text}")
-
-        # except Exception as e:
-        #         memory.add(f"{mem}The command returned an error:\n{str(e)}\nYou should fix the command.")
+        try:
+            if (command == "execute_python"):
+                f = StringIO()
+                with redirect_stdout(f):
+                    exec(arg)
+                memory.add(f"{mem}{f.getvalue()}")
+            elif command == "execute_shell":
+                result = subprocess.run(arg, capture_output=True, shell=True)
+                memory.add(f"{mem}STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
+            elif command == "web_search":
+                memory.add(f"{mem}{ddg(arg, max_results=5)}")
+            elif command == "web_scrape":
+                html = urlopen(arg).read()
+                response_text = memory.summarize_memory_if_large(BeautifulSoup(html, features="lxml").get_text(), max_memory_item_size)
+                memory.add(f"{mem}{response_text}")
+        except Exception as e:
+                memory.add(f"{mem}The command returned an error:\n{str(e)}\nYou should fix the command.")
