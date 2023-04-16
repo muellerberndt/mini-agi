@@ -16,9 +16,10 @@ The goal of this project was to create an agent with minimal amount of code and 
 git clone git@github.com:muellerberndt/micro-gpt.git
 cd micro-gpt
 pip install -r requirements.txt
-export OPENAI_API_KEY=[YOUR_API_KEY]
-python micro-gpt <objective>
+cp .env_example .env
 ```
+
+Configure your environment with OpenAI and Pinecone API keys.
 
 ### Examples
 

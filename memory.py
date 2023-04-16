@@ -41,7 +41,6 @@ class PineconeMemory():
         id = uuid.uuid1()
 
         self.index.upsert([(str(id), vector, {"data": data})])
-        print(f"Inserting data into memory at index: {id}:\n data: {data}")
 
     def get_context(self, data, num=5):
         vector = create_ada_embedding(data)

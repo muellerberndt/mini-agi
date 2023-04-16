@@ -11,6 +11,8 @@ from dotenv import load_dotenv
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
+debug = True if os.getenv("DEBUG") in ['true', '1', 't', 'y', 'yes'] else False
+
 from memory import PineconeMemory
 
 SYSTEM_PROMPT = "You are an autonomous agent who fulfills the user's objective."
@@ -38,8 +40,9 @@ if __name__ == "__main__":
         print(f"Prompting {model}...")
 
         context = memory.get_context(f"{objective}, {thought}")
-
-        print("CONTEXT: " + context)
+        
+        if debug:
+            print(f"CONTEXT:\n{context}")
 
         rs = openai.ChatCompletion.create(
             model=model,
@@ -52,7 +55,8 @@ if __name__ == "__main__":
 
         response_text = rs['choices'][0]['message']['content']
 
-        print(response_text)
+        if debug:
+            print(f"RAW RESPONSE:\n{response_text}")
 
         if "OBJECTIVE ACHIEVED" in response_text:
             print("Objective achieved.")
