@@ -11,6 +11,7 @@ from contextlib import redirect_stdout
 import subprocess
 from dotenv import load_dotenv
 from spinner import Spinner
+import wolframalpha
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -19,20 +20,44 @@ debug = True if os.getenv("DEBUG") in ['true', '1', 't', 'y', 'yes'] else False
 
 from memory import PineconeMemory
 
+
+commands = [
+    'execute_python',
+    'execute_shell',
+    'read_file',
+    'web_search',
+    'web_scrape',
+    'talk_to_user'
+]
+
+examples = [
+    '{"First, I will search for websites relevant to salami pizza.", "cmd": "web_search", "arg": "salami pizza"}',
+    '{"I am going to scrape information about Apples.", "cmd": "web_scrape", "arg": "https://en.wikipedia.org/wiki/Apple"}',
+    '{"I need to ask the user for guidance", "cmd": "talk_to_user", "arg": "What is URL of Dominos Pizza API?"}'
+]
+
+wolfram_app_id = os.getenv("WOLFRAM_ALPHA_APPID")
+
+if (wolfram_app_id is not None):
+    wolfram_client = wolframalpha.Client(wolfram_app_id)
+    commands.append('wolfram_question')
+    examples.append('{"I will ask Wolfram Alpha for facts", "cmd": "wolfram_question", "arg": "How many calories does a banana have?"}')
+
+_commands = ", ".join([command for command in commands])
+_examples = "\n".join([example for example in examples])
+
 SYSTEM_PROMPT = "You are an autonomous agent who fulfills the user's objective."
-INSTRUCTIONS = '''
+INSTRUCTIONS = f'''
 Carefully consider your next command.
 All Python code run with execute_python must have an output "print" statement.
 Use only non-interactive shell commands.
 When you have achieved the objective, respond ONLY with the plaintext OBJECTIVE ACHIEVED (no JSON)
-Otherwise, respond with a JSON-encoded dict containing one of the commands: execute_python, execute_shell, read_file, web_search, web_scrape, or talk_to_user
+Otherwise, respond with a JSON-encoded dict containing one of the commands: {_commands}
 Escape newlines in Python code.
-{"thought": "[REASONING]", "cmd": "[COMMAND]", "arg": "[ARGUMENT]"}
+{{"thought": "[REASONING]", "cmd": "[COMMAND]", "arg": "[ARGUMENT]"\}}
 Examples:
-{"First, I will search for websites relevant to salami pizza.", "cmd": "web_search", "arg": "salami pizza"}
-{"I am going to scrape information about Apples.", "cmd": "web_scrape", "arg": "https://en.wikipedia.org/wiki/Apple"}
-{"Showing results to the user", "cmd": "talk_to_user", "arg": "[My results]. Did I achieve my objective?"}
-{"I need to ask the user for guidance", "cmd": "talk_to_user", "arg": "What is URL of Domino's Pizza API?"}
+{_examples}
+
 IMPORTANT: ALWAYS RESPOND ONLY WITH THIS EXACT JSON FORMAT. DOUBLE-CHECK YOUR RESPONSE TO MAKE SURE IT CONTAINS VALID JSON. DO NOT INCLUDE ANY EXTRA TEXT WITH THE RESPONSE.
 '''
 
@@ -120,5 +145,11 @@ if __name__ == "__main__":
                 f = open(arg, "r")
                 file_content = memory.summarize_memory_if_large(f.read(), max_memory_item_size)
                 memory.add(f"{mem}{file_content}")
+            elif command == "wolfram_question":
+                res = wolfram_client.query(arg)
+                print(res)
+                response = memory.summarize_memory_if_large(next(res.results).text)
+                print(response)
+                memory.add(f"{mem}{response}")
         except Exception as e:
                 memory.add(f"{mem}The command returned an error:\n{str(e)}\nYou should fix the command.")
