@@ -31,6 +31,19 @@ python microgpt.py "Summarize the short story https://americanliterature.com/aut
 
 ### Examples
 
+#### Create generative art
+
+```
+ % python microgpt.py "Create a beautiful generative artwork in an image format of your choice and save it on my Desktop"
+MicroGPT: First, I will install necessary python packages for creating the artwork.
+Cmd: execute_shell, Arg: "pip install numpy pillow"
+
+MicroGPT: Generate a beautiful generative artwork using Python and save it on the user's Desktop
+Cmd: execute_python, Arg: "from PIL import Image, ImageDraw\nimport random\nfrom pathlib impo..."
+
+Objective achieved.
+```
+
 #### Bitcoin price analysis
 
 <p align="left">
