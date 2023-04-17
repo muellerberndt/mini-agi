@@ -3,3 +3,5 @@ tiktoken==0.3.3
 duckduckgo-search==2.8.5
 pinecone-client==2.2.1
 termcolor==2.2.0
+python-dotenv==1.0.0
+beautifulsoup4==4.12.2
