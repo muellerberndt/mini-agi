@@ -41,7 +41,7 @@ wolfram_app_id = os.getenv("WOLFRAM_ALPHA_APPID")
 if (wolfram_app_id is not None):
     wolfram_client = wolframalpha.Client(wolfram_app_id)
     commands.append('wolfram_question')
-    examples.append('{"I will ask Wolfram Alpha for facts", "cmd": "wolfram_question", "arg": "How many calories does a banana have?"}')
+    examples.append('{"I will ask Wolfram Alpha for this fact", "cmd": "wolfram_question", "arg": "How many calories does a banana have?"}')
 
 _commands = ", ".join([command for command in commands])
 _examples = "\n".join([example for example in examples])
@@ -147,9 +147,8 @@ if __name__ == "__main__":
                 memory.add(f"{mem}{file_content}")
             elif command == "wolfram_question":
                 res = wolfram_client.query(arg)
-                print(res)
-                response = memory.summarize_memory_if_large(next(res.results).text)
-                print(response)
+                resp = next(res.results).text
+                response = memory.summarize_memory_if_large(resp, max_memory_item_size)
                 memory.add(f"{mem}{response}")
         except Exception as e:
                 memory.add(f"{mem}The command returned an error:\n{str(e)}\nYou should fix the command.")
