@@ -115,9 +115,5 @@ if __name__ == "__main__":
                 f = open(arg, "r")
                 file_content = memory.summarize_memory_if_large(f.read(), max_memory_item_size)
                 memory.add(f"{mem}{file_content}")
-            elif command == "talk_to_user":
-                f = open(arg, "r")
-                file_content = memory.summarize_memory_if_large(f.read(), max_memory_item_size)
-                memory.add(f"{mem}{file_content}")
         except Exception as e:
                 memory.add(f"{mem}The command returned an error:\n{str(e)}\nYou should fix the command.")
