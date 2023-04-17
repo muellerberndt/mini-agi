@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import openai
+from termcolor import colored, cprint
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 from duckduckgo_search import ddg
@@ -9,6 +10,7 @@ from io import StringIO
 from contextlib import redirect_stdout
 import subprocess
 from dotenv import load_dotenv
+from spinner import Spinner
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -44,21 +46,22 @@ if __name__ == "__main__":
     thought = "I awakened moments ago."
 
     while(True):
-        print(f"Prompting {model}...")
+        # print(f"Prompting {model}...")
 
         context = memory.get_context(f"{objective}, {thought}")
         
         if debug:
             print(f"CONTEXT:\n{context}")
 
-        rs = openai.ChatCompletion.create(
-            model=model,
-            messages = [
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": f"OBJECTIVE:{objective}"},
-                {"role": "user", "content": f"COMTEXT:\n{context}"},
-                {"role": "user", "content": f"INSTRUCTIONS:\n{INSTRUCTIONS}"},
-            ])
+        with Spinner():
+            rs = openai.ChatCompletion.create(
+                model=model,
+                messages = [
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": f"OBJECTIVE:{objective}"},
+                    {"role": "user", "content": f"COMTEXT:\n{context}"},
+                    {"role": "user", "content": f"INSTRUCTIONS:\n{INSTRUCTIONS}"},
+                ])
 
         response_text = rs['choices'][0]['message']['content']
 
@@ -77,17 +80,17 @@ if __name__ == "__main__":
             mem = f"Your thought: {thought}\nYour command: {command}\nCmd argument:\n{arg}\nResult:\n"
 
         except Exception as e:
-            print(f"Unable to parse response:\n{str(e)}\Retrying...\n")
+            print(colored("Unable to parse response. Retrying...\n", "red"))
             continue
 
         if (command == "talk_to_user"):
-            print(f"MicroGPT: {arg}")
+            print(colored(f"MicroGPT: {arg}", 'cyan'))
             user_input = input('Your response: ')
             memory.add(f"{mem}The user responded with: {user_input}.")
             continue
 
         _arg = arg.replace("\n", "\\n") if len(arg) < 64 else f"{arg[:64]}...".replace("\n", "\\n")
-        print(f"MicroGPT: {thought}\nCmd: {command}, Arg: \"{_arg}\"")
+        print(colored(f"MicroGPT: {thought}\nCmd: {command}, Arg: \"{_arg}\"", "cyan"))
         user_input = input('Press enter to perform this action or abort by typing feedback: ')
 
         if (len(user_input) > 0):
