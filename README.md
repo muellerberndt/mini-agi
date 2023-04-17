@@ -23,6 +23,13 @@ Configure your environment with OpenAI and Pinecone API keys.
 
 ### Examples
 
+#### Bitcoin price analysis
+
+<p align="left">
+	<img src="/static/bitcoin-ta.jpg" height="650px"/>
+</p>
+
+
 #### Creating a PDF with summaries of the latest Picard episodes
 
 ```
