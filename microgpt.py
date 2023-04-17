@@ -2,7 +2,7 @@ import os
 import sys
 import json
 import openai
-from termcolor import colored, cprint
+from termcolor import colored
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 from duckduckgo_search import ddg
