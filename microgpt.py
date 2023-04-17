@@ -39,6 +39,11 @@ IMPORTANT: ALWAYS RESPOND ONLY WITH THIS EXACT JSON FORMAT. DOUBLE-CHECK YOUR RE
 if __name__ == "__main__":
 
     model = os.getenv("MODEL")
+
+    if(len(sys.argv) != 2):
+        print("Usage: microgpt.py <objective>")
+        quit()
+
     objective = sys.argv[1]
     max_memory_item_size = int(os.getenv("MAX_MEMORY_ITEM_SIZE"))
     memory = PineconeMemory()

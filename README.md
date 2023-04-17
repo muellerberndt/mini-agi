@@ -17,6 +17,18 @@ cp .env_example .env
 
 Configure your environment with OpenAI and Pinecone API keys.
 
+## Usage
+
+```
+python microgpt.py <objective>
+```
+
+For example:
+
+```
+python microgpt.py "Summarize the short story https://americanliterature.com/author/hg-wells/book/the-time-machine/i and save the result to a PDF file on my Desktop"
+```
+
 ### Examples
 
 #### Bitcoin price analysis
