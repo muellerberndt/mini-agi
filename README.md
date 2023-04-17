@@ -4,11 +4,7 @@
 	<img src="/static/avatar.jpg" height="320px"/>
 </p>
 
-A minimal autonomous agent.
-
-## Rationale
-
-The goal of this project was to create an agent with minimal amount of code and minimal dependencies.
+A simple and effective autonomous agent compatible with GPT-3.5-Turbo and GPT-4.
 
 ## Installation
 
