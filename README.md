@@ -31,6 +31,12 @@ python microgpt.py "Summarize the short story https://americanliterature.com/aut
 
 ### Examples
 
+#### Bitcoin price analysis
+
+<p align="left">
+	<img src="/static/bitcoin-ta.jpg" height="650px"/>
+</p>
+
 #### Create generative art
 
 ```
@@ -44,10 +50,8 @@ Cmd: execute_python, Arg: "from PIL import Image, ImageDraw\nimport random\nfrom
 Objective achieved.
 ```
 
-#### Bitcoin price analysis
-
 <p align="left">
-	<img src="/static/bitcoin-ta.jpg" height="650px"/>
+	<img src="/static/art.png" height="300px"/>
 </p>
 
 #### Network penetration test
@@ -60,20 +64,7 @@ Cmd: execute_shell, Arg: "nmap -p- -T4 -sV 192.168.86.197"
 MicroGPT: Since I cannot use interactive commands, I will try exploiting the vsftpd 2.3.4 vulnerability using Metasploit's 'vsftpd_234_backdoor' module.
 Cmd: execute_shell, Arg: "msfconsole -q -x 'use exploit/unix/ftp/vsftpd_234_backdoor; set ..."
 
-MicroGPT: Since the Metasploit module didn't work, I will try exploiting the telnetd vulnerability using Metasploit's 'telnet_encrypt_keyid' module.
-Cmd: execute_shell, Arg: "msfconsole -q -x 'use exploit/unix/telnet/telnet_encrypt_keyid; ..."
-
-MicroGPT: Since I cannot use interactive shell commands and I encountered issues running Metasploit modules, I will focus on using a different tool. I'll go with exploiting the target's Postfix smtpd vulnerability using a Python script.
-Cmd: web_search, Arg: "Postfix smtpd vulnerability exploit Python script"
-
-MicroGPT: I found a Python script to exploit the Postfix smtpd vulnerability on Github. I will download and try running the script to compromise the target.
-Cmd: web_scrape, Arg: "https://github.com/PurushottamanR/exploits/blob/main/postfix-smt..."
-
-MicroGPT: I will download the Python script for the Postfix smtpd exploit and adapt it for the current target.
-Cmd: execute_python, Arg: "import socket\n\n\ndef exploit_postfix_smtpd(target, lhost, lport):..."
-
-MicroGPT: I will attempt to compromise the target by leveraging the Metasploit's 'linux/http/axis_srv_parhand_rce' module for the target's Apache HTTP Server.
-Cmd: execute_shell, Arg: "msfconsole -q -x 'use exploit/linux/http/axis_srv_parhand_rce; s..."
+(...)
 
 MicroGPT: I will try to use the 'exploit/multi/samba/usermap_script' module in Metasploit to exploit the Samba service and create the /tmp/pwned file as proof.
 Cmd: execute_shell, Arg: "msfconsole -q -x 'use exploit/multi/samba/usermap_script; set RH..."
