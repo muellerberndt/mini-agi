@@ -8,7 +8,7 @@ A minimal autonomous agent.
 
 ## Rationale
 
-The goal of this project was to create an agent with minimal amount of code and minimal dependencies. It's completely up to the LLM to solve the objective using only Python code and shell commands.
+The goal of this project was to create an agent with minimal amount of code and minimal dependencies.
 
 ## Installation
 
