@@ -26,7 +26,6 @@ All Python code run with execute_python must have an output "print" statement.
 Use only non-interactive shell commands.
 When you have achieved the objective, respond ONLY with the plaintext OBJECTIVE ACHIEVED (no JSON)
 Otherwise, respond with a JSON-encoded dict containing one of the commands: execute_python, execute_shell, read_file, web_search, web_scrape, or talk_to_user
-Important: Escape all occurrences of \\n in Python code with \\\\n
 {"thought": "[REASONING]", "cmd": "[COMMAND]", "arg": "[ARGUMENT]"}
 Examples:
 {"First, I will search for websites relevant to salami pizza.", "cmd": "web_search", "arg": "salami pizza"}
