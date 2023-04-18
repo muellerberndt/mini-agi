@@ -15,7 +15,12 @@ pip install -r requirements.txt
 cp .env_example .env
 ```
 
-Configure your environment with OpenAI and Pinecone API keys (if using Pinecone) or Postgres connection info (if using postgres) and choose your memory type. If using postgres, you must have pg_vector and the psycopg2 Python package installed.
+### Choose a memory type
+
+Set the MEMORY_TYPE environment variable to one of the supported backends:
+
+- pinecone: Requires a [Pinecone](https://www.pinecone.io) account] and API key.
+- postgres: Requires a postgres server with pg_vector installed and the psycopg2 Python package.
 
 ## Usage
 
