@@ -17,7 +17,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 debug = True if os.getenv("DEBUG") in ['true', '1', 't', 'y', 'yes'] else False
 
-from memory import PineconeMemory
+from memory import get_memory_instance
 
 SYSTEM_PROMPT = "You are an autonomous agent who fulfills the user's objective."
 INSTRUCTIONS = '''
@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
     objective = sys.argv[1]
     max_memory_item_size = int(os.getenv("MAX_MEMORY_ITEM_SIZE"))
-    memory = PineconeMemory()
+    memory = get_memory_instance()
     context = objective
     thought = "I awakened moments ago."
 
@@ -54,7 +54,7 @@ if __name__ == "__main__":
         # print(f"Prompting {model}...")
 
         context = memory.get_context(f"{objective}, {thought}")
-        
+
         if debug:
             print(f"CONTEXT:\n{context}")
 
