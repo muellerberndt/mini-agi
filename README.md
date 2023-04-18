@@ -20,7 +20,7 @@ cp .env_example .env
 Set the MEMORY_TYPE environment variable to one of the supported backends:
 
 - pinecone: Requires a [Pinecone](https://www.pinecone.io) account] and API key.
-- postgres: Requires a postgres server with pg_vector installed and the psycopg2 Python package.
+- postgres: Requires the `psycopg2` Python package and a postgres server with `pg_vector` installed.
 
 ## Usage
 
