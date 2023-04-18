@@ -196,18 +196,22 @@ elif memory_type == "chromadb":
                 ids=[str(id)]
             )
 
-        def get_context(self, data, num=5):
+        def get_context(self, data, num=5, search=True):
             index_count = self.index.count()
             if index_count == 0:
                 return data
             elif index_count < num:
                 num = index_count
-            results = self.index.query(
-                query_texts=[data],
-                n_results=num
-            )
 
-            results_list = results["documents"][0]
+            if search:
+                results = self.index.query(
+                    query_texts=[data],
+                    n_results=num
+                )
+                results_list = results["documents"][0]
+            else:
+                results_list = self.index.get()["documents"][-num:]
+
             context = "\n".join(results_list)
             context = self.summarize_memory_if_large(
                 context, self.max_context_size)
