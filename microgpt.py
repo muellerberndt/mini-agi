@@ -85,7 +85,7 @@ if __name__ == "__main__":
                 messages = [
                     {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user", "content": f"OBJECTIVE:{objective}"},
-                    {"role": "user", "content": f"COMTEXT:\n{context}"},
+                    {"role": "user", "content": f"CONTEXT:\n{context}"},
                     {"role": "user", "content": f"INSTRUCTIONS:\n{INSTRUCTIONS}"},
                 ])
 
