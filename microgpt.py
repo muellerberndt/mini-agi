@@ -48,7 +48,6 @@ if __name__ == "__main__":
     memory = get_memory_instance()
     context = objective
     thought = "I awakened moments ago."
-    memory.add(f"{objective}, {thought}")
 
     while(True):
         context = memory.get_context(f"{objective}, {thought}")
@@ -62,7 +61,7 @@ if __name__ == "__main__":
                 messages = [
                     {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user", "content": f"OBJECTIVE:{objective}"},
-                    {"role": "user", "content": f"COMTEXT:\n{context}"},
+                    {"role": "user", "content": f"CONTEXT:\n{context}"},
                     {"role": "user", "content": f"INSTRUCTIONS:\n{INSTRUCTIONS}"},
                 ])
 

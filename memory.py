@@ -197,9 +197,11 @@ elif memory_type == "chromadb":
             )
 
         def get_context(self, data, num=5):
-            index_max = self.index.count()
-            if index_max < num:
-                num = index_max
+            index_count = self.index.count()
+            if index_count == 0:
+                return data
+            elif index_count < num:
+                num = index_count
             results = self.index.query(
                 query_texts=[data],
                 n_results=num
