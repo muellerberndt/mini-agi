@@ -51,8 +51,6 @@ if __name__ == "__main__":
     thought = "I awakened moments ago."
 
     while(True):
-        # print(f"Prompting {model}...")
-
         context = memory.get_context(f"{objective}, {thought}")
 
         if debug:
