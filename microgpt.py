@@ -50,6 +50,8 @@ if __name__ == "__main__":
     context = objective
     thought = "I awakened moments ago."
 
+    print(type(memory))
+
     while(True):
         context = memory.get_context(f"{objective}, {thought}")
 

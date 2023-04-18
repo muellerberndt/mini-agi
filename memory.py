@@ -4,12 +4,14 @@ import openai
 import textwrap
 import tiktoken
 from typing import List
+from abc import abstractmethod
 
 def create_ada_embedding(data):
     return openai.Embedding.create(
         input=[data],
         model="text-embedding-ada-002"
     )["data"][0]["embedding"]
+
 class Memory:
     def __init__(self):
         self.summarizer_model = os.getenv("SUMMARIZER_MODEL")
@@ -40,9 +42,11 @@ class Memory:
 
         return memory
 
+    @abstractmethod
     def add(self, data: str):
         raise NotImplementedError
 
+    @abstractmethod
     def get_context(self, data, num=5):
         raise NotImplementedError
 
