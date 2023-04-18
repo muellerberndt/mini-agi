@@ -4,7 +4,7 @@
 	<img src="/static/avatar.jpg" height="320px"/>
 </p>
 
-A simple and effective autonomous agent compatible with GPT-3.5-Turbo and GPT-4.
+A simple and effective autonomous agent compatible with GPT-3.5-Turbo and GPT-4. MicroGPT aims to be as compact and reliable as possible.
 
 ## Installation
 
