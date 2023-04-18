@@ -26,6 +26,9 @@ All Python code run with execute_python must have an output "print" statement.
 Use only non-interactive shell commands.
 When you have achieved the objective, respond ONLY with the plaintext OBJECTIVE ACHIEVED (no JSON)
 Otherwise, respond with a JSON-encoded dict containing one of the commands: execute_python, execute_shell, read_file, web_search, web_scrape, or talk_to_user
+Python code must be formatted as follows:
+- Lines separated by newlines ("\\n")
+- If including a literal "\\n", make sure to escape it to "\\\\n"
 {"thought": "[REASONING]", "cmd": "[COMMAND]", "arg": "[ARGUMENT]"}
 Examples:
 {"First, I will search for websites relevant to salami pizza.", "cmd": "web_search", "arg": "salami pizza"}
@@ -61,7 +64,7 @@ if __name__ == "__main__":
                 messages = [
                     {"role": "system", "content": SYSTEM_PROMPT},
                     {"role": "user", "content": f"OBJECTIVE:{objective}"},
-                    {"role": "user", "content": f"CONTEXT:\n{context}"},
+                    {"role": "user", "content": f"COMTEXT:\n{context}"},
                     {"role": "user", "content": f"INSTRUCTIONS:\n{INSTRUCTIONS}"},
                 ])
 
