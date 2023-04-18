@@ -1,6 +1,6 @@
 import os
 import sys
-import json
+import re
 import openai
 from termcolor import colored
 from bs4 import BeautifulSoup
@@ -22,24 +22,41 @@ from memory import get_memory_instance
 SYSTEM_PROMPT = "You are an autonomous agent who fulfills the user's objective."
 INSTRUCTIONS = '''
 Carefully consider your next command.
-Respond with a JSON-encoded dict containing one of the commands: execute_python, execute_shell, read_file, web_search, web_scrape, talk_to_user, or done
-{"thought": "[REASONING]", "cmd": "[COMMAND]", "arg": "[ARGUMENT]"}
+Supported commands are: execute_python, execute_shell, read_file, web_search, web_scrape, talk_to_user, or done
+The mandatory response format is:
+
+<r>[YOUR_REASONING]</r><c>[COMMAND]</c>
+[ARGUMENT]
+
+ARGUMENT may have multiple lines if the argument is Python code.
+
+Example:
+
+<r>Search for websites relevant to salami pizza.</r><c>web_search</c>
+salami pizza
+
+Example:
+
+<r>Scrape information about Apples.</r><c>web_scrape</c>
+https://en.wikipedia.org/wiki/Apple
+
+Example:
+
+<r>I need to ask the user for guidance.<r><c>talk_to_user</c>
+What is URL of Domino's Pizza API?
+
+Example:
+
+<r>Write 'Hello, world!' to file</r><c>execute_python</c>
+with open('hello_world.txt', 'w') as f:
+    f.write('Hello, world!')
+
 Use only non-interactive shell commands.
 Python code run with execute_python must have an output "print" statement.
-Python code must be formatted as follows:
-- If the Python code contains a literal "\\n", escape it to "\\\\n"
-- Encode line breaks as '\\n'
-- Carefully escape quotes and double quotes when needed
-Use the "done" command after the objective was achieved
-
-Examples:
-{"thought": Search for websites relevant to salami pizza.", "cmd": "web_search", "arg": "salami pizza"}
-{"thought": "Scrape information about Apples.", "cmd": "web_scrape", "arg": "https://en.wikipedia.org/wiki/Apple"}
-{"thought": "Showing results to the user", "cmd": "talk_to_user", "arg": "[My results]. Did I achieve my objective?"}
-{"thought": "I need to ask the user for guidance", "cmd": "talk_to_user", "arg": "What is URL of Domino's Pizza API?"}
-{"thought": "Write 'Hello, world!' to file", "cmd": "execute_python", "arg": "with open('hello_world.txt', 'w') as f:\\n    f.write('Hello, world!')" }
-
-IMPORTANT: ALWAYS RESPOND ONLY WITH THIS EXACT JSON FORMAT. DOUBLE-CHECK YOUR RESPONSE TO MAKE SURE IT CONTAINS VALID JSON. DO NOT INCLUDE ANY EXTRA TEXT WITH THE RESPONSE.
+Send a separate "done" command *after* the objective was achieved.
+IMPORTANT: RESPOND WITH PRECISELY ONE THOUGH/COMMAND/ARG COMBINATION.
+DO NOT CHAIN MULTIPLE COMMANDS.
+DO NOT INCLUDE EXTRA TEXT BEFORE OR AFTER THE COMMAND.
 '''
 
 if __name__ == "__main__":
@@ -78,10 +95,25 @@ if __name__ == "__main__":
             print(f"RAW RESPONSE:\n{response_text}")
 
         try:
-            response = json.loads(response_text)
-            thought = response["thought"]
-            command = response["cmd"]
-            arg = response["arg"]
+            res_lines = response_text.split("\n")
+            pattern = r'<(r|c)>(.*?)</(r|c)>'
+            matches = re.findall(pattern, res_lines[0])
+
+            thought = matches[0][1]
+            command = matches[1][1]
+
+            if command == "done":
+                print("Objective achieved.")
+                quit()
+            
+            # Account for GPT-3.5 sometimes including an extra "done"
+            if "done" in res_lines[-1]:
+                res_line = res_lines[:-1]
+
+            arg = "\n".join(res_lines[1:])
+
+            # Remove unwanted code formatting backticks
+            arg = arg.replace("```", "")
 
             mem = f"Your thought: {thought}\nYour command: {command}\nCmd argument:\n{arg}\nResult:\n"
 
@@ -125,4 +157,4 @@ if __name__ == "__main__":
                 print("Objective achieved.")
                 quit()
         except Exception as e:
-                memory.add(f"{mem}The command returned an error:\n{str(e)}\nYou should fix the command.")
+                memory.add(f"{mem}The command returned an error:\n{str(e)}\nYou should fix the command or code.")
