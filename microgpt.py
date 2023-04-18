@@ -22,19 +22,23 @@ from memory import get_memory_instance
 SYSTEM_PROMPT = "You are an autonomous agent who fulfills the user's objective."
 INSTRUCTIONS = '''
 Carefully consider your next command.
-All Python code run with execute_python must have an output "print" statement.
-Use only non-interactive shell commands.
-When you have achieved the objective, respond ONLY with the plaintext OBJECTIVE ACHIEVED (no JSON)
-Otherwise, respond with a JSON-encoded dict containing one of the commands: execute_python, execute_shell, read_file, web_search, web_scrape, or talk_to_user
-Python code must be formatted as follows:
-- Lines separated by newlines ("\\n")
-- If including a literal "\\n", make sure to escape it to "\\\\n"
+Respond with a JSON-encoded dict containing one of the commands: execute_python, execute_shell, read_file, web_search, web_scrape, talk_to_user, or done
 {"thought": "[REASONING]", "cmd": "[COMMAND]", "arg": "[ARGUMENT]"}
+Use only non-interactive shell commands.
+Python code run with execute_python must have an output "print" statement.
+Python code must be formatted as follows:
+- If the Python code contains a literal "\\n", escape it to "\\\\n"
+- Encode line breaks as '\\n'
+- Carefully escape quotes and double quotes when needed
+Use the "done" command after the objective was achieved
+
 Examples:
-{"First, I will search for websites relevant to salami pizza.", "cmd": "web_search", "arg": "salami pizza"}
-{"I am going to scrape information about Apples.", "cmd": "web_scrape", "arg": "https://en.wikipedia.org/wiki/Apple"}
-{"Showing results to the user", "cmd": "talk_to_user", "arg": "[My results]. Did I achieve my objective?"}
-{"I need to ask the user for guidance", "cmd": "talk_to_user", "arg": "What is URL of Domino's Pizza API?"}
+{"thought": Search for websites relevant to salami pizza.", "cmd": "web_search", "arg": "salami pizza"}
+{"thought": "Scrape information about Apples.", "cmd": "web_scrape", "arg": "https://en.wikipedia.org/wiki/Apple"}
+{"thought": "Showing results to the user", "cmd": "talk_to_user", "arg": "[My results]. Did I achieve my objective?"}
+{"thought": "I need to ask the user for guidance", "cmd": "talk_to_user", "arg": "What is URL of Domino's Pizza API?"}
+{"thought": "Write 'Hello, world!' to file", "cmd": "execute_python", "arg": "with open('hello_world.txt', 'w') as f:\\n    f.write('Hello, world!')" }
+
 IMPORTANT: ALWAYS RESPOND ONLY WITH THIS EXACT JSON FORMAT. DOUBLE-CHECK YOUR RESPONSE TO MAKE SURE IT CONTAINS VALID JSON. DO NOT INCLUDE ANY EXTRA TEXT WITH THE RESPONSE.
 '''
 
@@ -73,9 +77,6 @@ if __name__ == "__main__":
         if debug:
             print(f"RAW RESPONSE:\n{response_text}")
 
-        if response_text == "OBJECTIVE ACHIEVED":
-            print("Objective achieved.")
-            quit()
         try:
             response = json.loads(response_text)
             thought = response["thought"]
@@ -120,5 +121,8 @@ if __name__ == "__main__":
                 f = open(arg, "r")
                 file_content = memory.summarize_memory_if_large(f.read(), max_memory_item_size)
                 memory.add(f"{mem}{file_content}")
+            elif command == "done":
+                print("Objective achieved.")
+                quit()
         except Exception as e:
                 memory.add(f"{mem}The command returned an error:\n{str(e)}\nYou should fix the command.")
