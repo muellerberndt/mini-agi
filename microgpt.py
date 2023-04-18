@@ -48,6 +48,7 @@ if __name__ == "__main__":
     memory = get_memory_instance()
     context = objective
     thought = "I awakened moments ago."
+    memory.add(f"{objective}, {thought}")
 
     while(True):
         context = memory.get_context(f"{objective}, {thought}")
