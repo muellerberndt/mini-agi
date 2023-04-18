@@ -75,27 +75,27 @@ if memory_type == "pinecone":
             if os.getenv("CLEAR_DB_ON_START") in ['true', '1', 't', 'y', 'yes']:
                 self.index.delete(deleteAll='true')
 
-    def add(self, data: str):
-        vector = create_ada_embedding(data)
+        def add(self, data: str):
+            vector = create_ada_embedding(data)
 
-        id = uuid.uuid1()
+            id = uuid.uuid1()
 
-        self.index.upsert([(str(id), vector, {"data": data})])
+            self.index.upsert([(str(id), vector, {"data": data})])
 
-    def get_context(self, data, num=5):
-        vector = create_ada_embedding(data)
-        results = self.index.query(
-            vector, top_k=num, include_metadata=True
-        )
-        sorted_results = sorted(results.matches, key=lambda x: x.score)
-        results_list = [str(item["metadata"]["data"])
-                        for item in sorted_results]
-        context = "\n".join(results_list)
+        def get_context(self, data, num=5):
+            vector = create_ada_embedding(data)
+            results = self.index.query(
+                vector, top_k=num, include_metadata=True
+            )
+            sorted_results = sorted(results.matches, key=lambda x: x.score)
+            results_list = [str(item["metadata"]["data"])
+                            for item in sorted_results]
+            context = "\n".join(results_list)
 
-        context = self.summarize_memory_if_large(
-            context, self.max_context_size)
+            context = self.summarize_memory_if_large(
+                context, self.max_context_size)
 
-        return context
+            return context
 
 elif memory_type == "postgres":
     import psycopg2
