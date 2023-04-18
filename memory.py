@@ -171,6 +171,49 @@ elif memory_type == "postgres":
 
             return context
 
+elif memory_type == "chromadb":
+    import chromadb
+
+    class ChromaDBMemory(Memory):
+
+        def __init__(self):
+            super().__init__()
+
+            client = chromadb.Client()
+            self.index = client.create_collection("microgpt")
+
+            if os.getenv("CLEAR_DB_ON_START") in ['true', '1', 't', 'y', 'yes']:
+                self.index.delete("microgpt")
+
+            os.environ['TOKENIZERS_PARALLELISM'] = 'false'
+
+        def add(self, data: str):
+            id = uuid.uuid1()
+
+            self.index.add(
+                documents=[data],
+                metadatas=[{"type": "memory"}],
+                ids=[str(id)]
+            )
+
+        def get_context(self, data, num=5):
+            index_count = self.index.count()
+            if index_count == 0:
+                return data
+            elif index_count < num:
+                num = index_count
+            results = self.index.query(
+                query_texts=[data],
+                n_results=num
+            )
+
+            results_list = results["documents"][0]
+            context = "\n".join(results_list)
+            context = self.summarize_memory_if_large(
+                context, self.max_context_size)
+
+            return context
+
 else:
     raise ValueError("Invalid MEMORY_TYPE environment variable")
 
@@ -180,5 +223,7 @@ def get_memory_instance():
         return PineconeMemory()
     elif memory_type == "postgres":
         return PostgresMemory()
+    elif memory_type == "chromadb":
+        return ChromaDBMemory()
     else:
         raise ValueError("Invalid MEMORY_TYPE environment variable")
