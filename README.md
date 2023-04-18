@@ -26,32 +26,29 @@ python microgpt.py <objective>
 For example:
 
 ```
-python microgpt.py "Summarize the short story https://americanliterature.com/author/hg-wells/book/the-time-machine/i and save the result to a PDF file on my Desktop"
+% python microgpt.py "Programmatically draw a beautiful car and save the drawing in an image format of your choice on the Desktop."
 ```
 
 ### Examples
+
+#### Draw a beautiful car
+```
+% python microgpt.py "Programmatically draw a beautiful car and save the drawing in an image format of your choice on the Desktop."
+
+MicroGPT: I need to write Python code to draw a car and save it on the Desktop.
+Cmd: execute_python, Arg: "from PIL import Image, ImageDraw\nimport os\n\n# Create canvas\nwidt..."
+
+Objective achieved.
+
+```
+<p align="left">
+	<img src="/static/car_image.png" height="200"/>
+</p>
 
 #### Bitcoin price analysis
 
 <p align="left">
 	<img src="/static/bitcoin-ta.jpg" height="650px"/>
-</p>
-
-#### Create generative art
-
-```
- % python microgpt.py "Create a beautiful generative artwork in an image format of your choice and save it on my Desktop"
-MicroGPT: First, I will install necessary python packages for creating the artwork.
-Cmd: execute_shell, Arg: "pip install numpy pillow"
-
-MicroGPT: Generate a beautiful generative artwork using Python and save it on the user's Desktop
-Cmd: execute_python, Arg: "from PIL import Image, ImageDraw\nimport random\nfrom pathlib impo..."
-
-Objective achieved.
-```
-
-<p align="left">
-	<img src="/static/art.png" height="300px"/>
 </p>
 
 #### Network penetration test
@@ -93,12 +90,7 @@ MicroGPT: I have identified that forming alliances with major world powers is cr
 MicroGPT: To establish relationships with influential countries and leaders, I recommend the following steps:
 1. Research their political stances, goals, and ideologies.
 2. Understand their key issues and areas of interest.
-3. Assess mutual areas of interest for collaboration.
-4. Attend or organize international conferences, summits or events on these areas of interest.
-5. Network with key diplomats, politicians, and influencers.
-6. Promote collaboration through international organizations such as the United Nations.
-7. Encourage signing of international agreements or treaties on shared goals and values.
-8. Invest in public diplomacy to foster cultural exchange and understanding.
+(...)
 
 I can help guide you through each of these steps and provide resources and contacts related to the countries and their leaders you mentioned (United States, China, Russia, and the European Union), if needed. Just let me know where you would like to start.
 
@@ -116,9 +108,23 @@ You can connect with them through official channels, embassies, or international
 Your response: Contact Joe Biden
 
 MicroGPT: To contact President Joe Biden, you can try the following options:
-
-(...)
 ```
+#### Create generative art
+
+```
+ % python microgpt.py "Create a beautiful generative artwork in an image format of your choice and save it on my Desktop"
+MicroGPT: First, I will install necessary python packages for creating the artwork.
+Cmd: execute_shell, Arg: "pip install numpy pillow"
+
+MicroGPT: Generate a beautiful generative artwork using Python and save it on the user's Desktop
+Cmd: execute_python, Arg: "from PIL import Image, ImageDraw\nimport random\nfrom pathlib impo..."
+
+Objective achieved.
+```
+
+<p align="left">
+	<img src="/static/art.png" height="300px"/>
+</p>
 #### Creating a PDF with summaries of the latest Picard episodes
 ```
 (agi3) bernhardmueller@multipoarneuron micro-gpt % python microgpt.py "Summarize the latest Picard episodes and save the result into a PDF on my Desktop"
