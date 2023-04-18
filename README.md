@@ -130,6 +130,7 @@ Objective achieved.
 <p align="left">
 	<img src="/static/art.png" height="300px"/>
 </p>
+
 #### Creating a PDF with summaries of the latest Picard episodes
 ```
 (agi3) bernhardmueller@multipoarneuron micro-gpt % python microgpt.py "Summarize the latest Picard episodes and save the result into a PDF on my Desktop"
