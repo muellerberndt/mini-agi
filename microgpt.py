@@ -54,7 +54,7 @@ with open('hello_world.txt', 'w') as f:
 Use only non-interactive shell commands.
 Python code run with execute_python must end with an output "print" statement.
 Send a separate "done" command *after* the objective was achieved.
-IMPORTANT: RESPOND WITH PRECISELY ONE THOUGH/COMMAND/ARG COMBINATION.
+IMPORTANT: RESPOND WITH PRECISELY ONE THOUGHT/COMMAND/ARG COMBINATION.
 DO NOT CHAIN MULTIPLE COMMANDS.
 DO NOT INCLUDE EXTRA TEXT BEFORE OR AFTER THE COMMAND.
 '''
