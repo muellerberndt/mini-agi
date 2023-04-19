@@ -1,24 +1,43 @@
+"""Memory implementation for MicroGPT
+"""
+
 import os
 import uuid
-import openai
 import textwrap
-import tiktoken
 from typing import List
 from abc import abstractmethod
+import openai
+import tiktoken
 
-def create_ada_embedding(data):
+
+def create_ada_embedding(data: str):
+    """
+    Create an embedding using the OpenAI API.
+
+    :param data: Data to create embedding for
+
+    """
     return openai.Embedding.create(
         input=[data],
         model="text-embedding-ada-002"
     )["data"][0]["embedding"]
 
 class Memory:
+    """
+    Memory base class 
+    """
     def __init__(self):
         self.summarizer_model = os.getenv("SUMMARIZER_MODEL")
         self.max_context_size = int(os.getenv("MAX_CONTEXT_SIZE"))
         self.summarizer_chunk_size = int(os.getenv("SUMMARIZER_CHUNK_SIZE"))
 
     def summarize_memory_if_large(self, memory: str, max_tokens: int) -> str:
+        """
+
+        :param memory: str: 
+        :param max_tokens: int: 
+
+        """
         num_tokens = len(tiktoken.encoding_for_model(
             self.summarizer_model).encode(memory))
 
@@ -29,25 +48,36 @@ class Memory:
             summary_size = int(max_tokens / len(chunks))
             memory = ""
 
-            print("Summarizing memory, {} chunks.".format(len(chunks)))
+            print(f"Summarizing memory, {len(chunks)} chunks.")
 
             for chunk in chunks:
-                rs = openai.ChatCompletion.create(
+                response = openai.ChatCompletion.create(
                     model=self.summarizer_model,
                     messages=[
                         {"role": "user", "content": f"Shorten the following memory chunk of an autonomous agent from a first person perspective, {summary_size} tokens max."},
                         {"role": "user", "content": f"Do your best to retain all semantic information including tasks performed by the agent, website content, important data points and hyper-links:\n\n{chunk}"},
                     ])
-                memory += rs['choices'][0]['message']['content']
+                memory += response['choices'][0]['message']['content']
 
         return memory
 
     @abstractmethod
     def add(self, data: str):
+        """
+
+        :param data: str: 
+
+        """
         raise NotImplementedError
 
     @abstractmethod
     def get_context(self, data, num=5):
+        """
+
+        :param data: 
+        :param num:  (Default value = 5)
+
+        """
         raise NotImplementedError
 
 
@@ -57,6 +87,9 @@ if memory_type == "pinecone":
     import pinecone
 
     class PineconeMemory(Memory):
+        """
+        Pinecone memory implementation. 
+        """
         def __init__(self):
             super().__init__()
             pinecone.init(
@@ -76,6 +109,11 @@ if memory_type == "pinecone":
                 self.index.delete(deleteAll='true')
 
         def add(self, data: str):
+            """
+
+            :param data: str: 
+
+            """
             vector = create_ada_embedding(data)
 
             id = uuid.uuid1()
@@ -83,6 +121,12 @@ if memory_type == "pinecone":
             self.index.upsert([(str(id), vector, {"data": data})])
 
         def get_context(self, data, num=5):
+            """
+
+            :param data: 
+            :param num:  (Default value = 5)
+
+            """
             vector = create_ada_embedding(data)
             results = self.index.query(
                 vector, top_k=num, include_metadata=True
@@ -104,6 +148,7 @@ elif memory_type == "postgres":
     from sklearn.metrics.pairwise import cosine_similarity
 
     class PostgresMemory(Memory):
+        """ """
         def __init__(self):
             super().__init__()
 
@@ -120,6 +165,7 @@ elif memory_type == "postgres":
                 self._clear_table()
 
         def _create_table_if_not_exists(self):
+            """ """
             with self.conn.cursor() as cur:
                 cur.execute(
                     """
@@ -133,17 +179,24 @@ elif memory_type == "postgres":
                 self.conn.commit()
 
         def _clear_table(self):
+            """ """
             with self.conn.cursor() as cur:
                 cur.execute("DELETE FROM memory;")
                 self.conn.commit()
 
         def _get_vectors_from_memory(self) -> List:
+            """ """
             with self.conn.cursor() as cur:
                 cur.execute("SELECT id, vector, data FROM memory;")
                 vectors = cur.fetchall()
             return vectors
 
         def add(self, data: str):
+            """
+
+            :param data: str: 
+
+            """
             vector = create_ada_embedding(data)
 
             id = uuid.uuid1()
@@ -156,6 +209,12 @@ elif memory_type == "postgres":
                 self.conn.commit()
 
         def get_context(self, data, num=5):
+            """
+
+            :param data: 
+            :param num:  (Default value = 5)
+
+            """
             vector = create_ada_embedding(data)
 
             all_vectors = self._get_vectors_from_memory()
@@ -175,6 +234,7 @@ elif memory_type == "chromadb":
     import chromadb
 
     class ChromaDBMemory(Memory):
+        """ """
 
         def __init__(self):
             super().__init__()
@@ -188,6 +248,11 @@ elif memory_type == "chromadb":
             os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
         def add(self, data: str):
+            """
+
+            :param data: str: 
+
+            """
             id = uuid.uuid1()
 
             self.index.add(
@@ -197,6 +262,12 @@ elif memory_type == "chromadb":
             )
 
         def get_context(self, data, num=5):
+            """
+
+            :param data: 
+            :param num:  (Default value = 5)
+
+            """
             index_count = self.index.count()
             if index_count == 0:
                 return data
@@ -219,6 +290,7 @@ else:
 
 
 def get_memory_instance():
+    """ """
     if memory_type == "pinecone":
         return PineconeMemory()
     elif memory_type == "postgres":

@@ -3,11 +3,13 @@ import time
 import threading
 
 class Spinner:
+    """ """
     busy = False
     delay = 0.1
 
     @staticmethod
     def spinning_cursor():
+        """ """
         while 1: 
             for cursor in '|/-\\': yield cursor
 
@@ -16,6 +18,7 @@ class Spinner:
         if delay and float(delay): self.delay = delay
 
     def spinner_task(self):
+        """ """
         while self.busy:
             sys.stdout.write(next(self.spinner_generator))
             sys.stdout.flush()
