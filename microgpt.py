@@ -128,7 +128,7 @@ if __name__ == "__main__":
             arg = arg.replace("```", "")
 
             mem = f"Your thought: {thought}\nYour command: {command}"\
-                "\nCmd argument:\n{arg}\nResult:\n"
+                f"\nCmd argument:\n{arg}\nResult:\n"
 
         except Exception as e:
             print(colored("Unable to parse response. Retrying...\n", "red"))
