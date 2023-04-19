@@ -8,7 +8,7 @@ commands, such as executing Python code, running shell commands, reading files, 
 scraping websites, and conversing with users.
 """
 
-# pylint: disable=invalid-name, broad-exception-caught, exec-used, unspecified-encoding, wrong-import-position
+# pylint: disable=invalid-name, broad-exception-caught, exec-used, unspecified-encoding, wrong-import-position, import-error
 
 import os
 import sys
