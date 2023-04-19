@@ -1,21 +1,33 @@
+"""
+MicroGPT main executable.
+
+This script serves as the main entry point for the MicroGPT application. It provides a command-line
+interface for users to interact with a GPT-4 language model, leveraging memory management and
+context-based reasoning to achieve user-defined objectives. Users can issue various types of
+commands, such as executing Python code, running shell commands, reading files, searching the web,
+scraping websites, and conversing with users.
+"""
+
+# pylint: disable=invalid-name, broad-exception-caught, exec-used, unspecified-encoding, wrong-import-position
+
 import os
 import sys
 import re
-import openai
-from termcolor import colored
-from bs4 import BeautifulSoup
-from urllib.request import urlopen
-from duckduckgo_search import ddg
+import subprocess
 from io import StringIO
 from contextlib import redirect_stdout
-import subprocess
+from urllib.request import urlopen
+from bs4 import BeautifulSoup
 from dotenv import load_dotenv
+from termcolor import colored
+import openai
+from duckduckgo_search import ddg
 from spinner import Spinner
 
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
 
-debug = True if os.getenv("DEBUG") in ['true', '1', 't', 'y', 'yes'] else False
+openai.api_key = os.getenv("OPENAI_API_KEY")
+DEBUG = os.getenv("DEBUG") in ['true', '1', 't', 'y', 'yes']
 
 from memory import get_memory_instance
 
@@ -63,9 +75,9 @@ if __name__ == "__main__":
 
     model = os.getenv("MODEL")
 
-    if(len(sys.argv) != 2):
+    if len(sys.argv) != 2:
         print("Usage: microgpt.py <objective>")
-        quit()
+        sys.exit(0)
 
     objective = sys.argv[1]
     max_memory_item_size = int(os.getenv("MAX_MEMORY_ITEM_SIZE"))
@@ -73,10 +85,10 @@ if __name__ == "__main__":
     context = objective
     thought = "I awakened moments ago."
 
-    while(True):
+    while True:
         context = memory.get_context(f"{objective}, {thought}")
 
-        if debug:
+        if DEBUG:
             print(f"CONTEXT:\n{context}")
 
         with Spinner():
@@ -91,21 +103,21 @@ if __name__ == "__main__":
 
         response_text = rs['choices'][0]['message']['content']
 
-        if debug:
+        if DEBUG:
             print(f"RAW RESPONSE:\n{response_text}")
 
         try:
             res_lines = response_text.split("\n")
-            pattern = r'<(r|c)>(.*?)</(r|c)>'
-            matches = re.findall(pattern, res_lines[0])
+            PATTERN = r'<(r|c)>(.*?)</(r|c)>'
+            matches = re.findall(PATTERN, res_lines[0])
 
             thought = matches[0][1]
             command = matches[1][1]
 
             if command == "done":
                 print("Objective achieved.")
-                quit()
-            
+                sys.exit(0)
+
             # Account for GPT-3.5 sometimes including an extra "done"
             if "done" in res_lines[-1]:
                 res_line = res_lines[:-1]
@@ -115,13 +127,14 @@ if __name__ == "__main__":
             # Remove unwanted code formatting backticks
             arg = arg.replace("```", "")
 
-            mem = f"Your thought: {thought}\nYour command: {command}\nCmd argument:\n{arg}\nResult:\n"
+            mem = f"Your thought: {thought}\nYour command: {command}"\
+                "\nCmd argument:\n{arg}\nResult:\n"
 
         except Exception as e:
             print(colored("Unable to parse response. Retrying...\n", "red"))
             continue
 
-        if (command == "talk_to_user"):
+        if command == "talk_to_user":
             print(colored(f"MicroGPT: {arg}", 'cyan'))
             user_input = input('Your response: ')
             memory.add(f"{mem}The user responded with: {user_input}.")
@@ -131,30 +144,38 @@ if __name__ == "__main__":
         print(colored(f"MicroGPT: {thought}\nCmd: {command}, Arg: \"{_arg}\"", "cyan"))
         user_input = input('Press enter to perform this action or abort by typing feedback: ')
 
-        if (len(user_input) > 0):
-            memory.add(f"{mem}The user responded: {user_input}. Take this comment into consideration.")
+        if len(user_input) > 0:
+            memory.add(f"{mem}The user responded: {user_input}."\
+                "Take this comment into consideration.")
             continue
         try:
-            if (command == "execute_python"):
+            if command == "execute_python":
                 _stdout = StringIO()
                 with redirect_stdout(_stdout):
                     exec(arg)
                 memory.add(f"{mem}{_stdout.getvalue()}")
             elif command == "execute_shell":
-                result = subprocess.run(arg, capture_output=True, shell=True)
+                result = subprocess.run(arg, capture_output=True, shell=True, check=False)
                 memory.add(f"{mem}STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
             elif command == "web_search":
                 memory.add(f"{mem}{ddg(arg, max_results=5)}")
             elif command == "web_scrape":
-                html = urlopen(arg).read()
-                response_text = memory.summarize_memory_if_large(BeautifulSoup(html, features="lxml").get_text(), max_memory_item_size)
+                with urlopen(arg).read() as html:
+                    response_text = memory.summarize_memory_if_large(
+                        BeautifulSoup(
+                            html,
+                            features="lxml"
+                        ).get_text(),
+                        max_memory_item_size
+                    )
                 memory.add(f"{mem}{response_text}")
             elif command == "read_file":
-                f = open(arg, "r")
-                file_content = memory.summarize_memory_if_large(f.read(), max_memory_item_size)
+                with open(arg, "r") as f:
+                    file_content = memory.summarize_memory_if_large(f.read(), max_memory_item_size)
                 memory.add(f"{mem}{file_content}")
             elif command == "done":
                 print("Objective achieved.")
-                quit()
+                sys.exit(0)
         except Exception as e:
-                memory.add(f"{mem}The command returned an error:\n{str(e)}\nYou should fix the command or code.")
+            memory.add(f"{mem}The command returned an error:\n{str(e)}\n"\
+                "You should fix the command or code.")

@@ -1,5 +1,8 @@
-"""Memory implementation for MicroGPT
 """
+Memory implementation for MicroGPT.
+"""
+
+# pylint: disable=line-too-long, import-error
 
 import os
 import uuid
@@ -24,7 +27,7 @@ def create_ada_embedding(data: str):
 
 class Memory:
     """
-    Memory base class 
+    Abstract base class for various memory implementations.
     """
     def __init__(self):
         self.summarizer_model = os.getenv("SUMMARIZER_MODEL")
@@ -33,10 +36,14 @@ class Memory:
 
     def summarize_memory_if_large(self, memory: str, max_tokens: int) -> str:
         """
+        Summarize a memory string if it exceeds the max_tokens limit.
 
-        :param memory: str: 
-        :param max_tokens: int: 
+        Args:
+            memory (str): The memory string to be summarized.
+            max_tokens (int): The maximum token limit.
 
+        Returns:
+            str: The summarized memory string.
         """
         num_tokens = len(tiktoken.encoding_for_model(
             self.summarizer_model).encode(memory))
@@ -64,19 +71,24 @@ class Memory:
     @abstractmethod
     def add(self, data: str):
         """
+        Add a data entry to the memory.
 
-        :param data: str: 
-
+        Args:
+            data (str): The data string to be added to the memory.
         """
         raise NotImplementedError
 
     @abstractmethod
     def get_context(self, data, num=5):
         """
+        Retrieve context data from the memory based on a query.
 
-        :param data: 
-        :param num:  (Default value = 5)
+        Args:
+            data: The query data.
+            num (int, optional): The number of memory items to retrieve. Defaults to 5.
 
+        Returns:
+            str: The retrieved context.
         """
         raise NotImplementedError
 
@@ -88,7 +100,7 @@ if memory_type == "pinecone":
 
     class PineconeMemory(Memory):
         """
-        Pinecone memory implementation. 
+        Pinecone memory implementation.
         """
         def __init__(self):
             super().__init__()
@@ -110,22 +122,27 @@ if memory_type == "pinecone":
 
         def add(self, data: str):
             """
+            Add a data entry to the Pinecone memory.
 
-            :param data: str: 
-
+            Args:
+                data (str): The data string to be added to the memory.
             """
             vector = create_ada_embedding(data)
 
-            id = uuid.uuid1()
+            _id = uuid.uuid1()
 
-            self.index.upsert([(str(id), vector, {"data": data})])
+            self.index.upsert([(str(_id), vector, {"data": data})])
 
         def get_context(self, data, num=5):
             """
+            Retrieve context data from the Pinecone memory based on a query.
 
-            :param data: 
-            :param num:  (Default value = 5)
+            Args:
+                data: The query data.
+                num (int, optional): The number of memory items to retrieve. Defaults to 5.
 
+            Returns:
+                str: The retrieved context.
             """
             vector = create_ada_embedding(data)
             results = self.index.query(
@@ -143,12 +160,12 @@ if memory_type == "pinecone":
 
 elif memory_type == "postgres":
     import psycopg2
-    from psycopg2.extras import execute_values
-    import sklearn
     from sklearn.metrics.pairwise import cosine_similarity
 
     class PostgresMemory(Memory):
-        """ """
+        """
+        Postgres memory implementation.
+        """
         def __init__(self):
             super().__init__()
 
@@ -165,7 +182,9 @@ elif memory_type == "postgres":
                 self._clear_table()
 
         def _create_table_if_not_exists(self):
-            """ """
+            """
+            Create a memory table in the Postgres database if it does not exist.
+            """
             with self.conn.cursor() as cur:
                 cur.execute(
                     """
@@ -179,13 +198,20 @@ elif memory_type == "postgres":
                 self.conn.commit()
 
         def _clear_table(self):
-            """ """
+            """
+            Clear all entries in the memory table.
+            """
             with self.conn.cursor() as cur:
                 cur.execute("DELETE FROM memory;")
                 self.conn.commit()
 
         def _get_vectors_from_memory(self) -> List:
-            """ """
+            """
+            Retrieve all memory vectors from the Postgres memory.
+
+            Returns:
+                List: A list of memory vectors.
+            """
             with self.conn.cursor() as cur:
                 cur.execute("SELECT id, vector, data FROM memory;")
                 vectors = cur.fetchall()
@@ -193,27 +219,32 @@ elif memory_type == "postgres":
 
         def add(self, data: str):
             """
+            Add a data entry to the Postgres memory.
 
-            :param data: str: 
-
+            Args:
+                data (str): The data string to be added to the memory.
             """
             vector = create_ada_embedding(data)
 
-            id = uuid.uuid1()
+            _id = uuid.uuid1()
 
             with self.conn.cursor() as cur:
                 cur.execute(
                     "INSERT INTO memory (id, vector, data) VALUES (%s, %s, %s);",
-                    (str(id), vector, data)
+                    (str(_id), vector, data)
                 )
                 self.conn.commit()
 
         def get_context(self, data, num=5):
             """
+            Retrieve context data from the Postgres memory based on a query.
 
-            :param data: 
-            :param num:  (Default value = 5)
+            Args:
+                data: The query data.
+                num (int, optional): The number of memory items to retrieve. Defaults to 5.
 
+            Returns:
+                str: The retrieved context.
             """
             vector = create_ada_embedding(data)
 
@@ -234,7 +265,9 @@ elif memory_type == "chromadb":
     import chromadb
 
     class ChromaDBMemory(Memory):
-        """ """
+        """ 
+        ChromaDB memory implementation.
+        """
 
         def __init__(self):
             super().__init__()
@@ -249,29 +282,34 @@ elif memory_type == "chromadb":
 
         def add(self, data: str):
             """
+            Add a data entry to the ChromaDB memory.
 
-            :param data: str: 
-
+            Args:
+                data (str): The data string to be added to the memory.
             """
-            id = uuid.uuid1()
+            _id = uuid.uuid1()
 
             self.index.add(
                 documents=[data],
                 metadatas=[{"type": "memory"}],
-                ids=[str(id)]
+                ids=[str(_id)]
             )
 
-        def get_context(self, data, num=5):
+        def get_context(self, data: str, num: int=5):
             """
+            Retrieve context data from the ChromaDB memory based on a query.
 
-            :param data: 
-            :param num:  (Default value = 5)
+            Args:
+                data (str): The query data.
+                num (int, optional): The number of memory items to retrieve. Defaults to 5.
 
+            Returns:
+                str: The retrieved context.
             """
             index_count = self.index.count()
             if index_count == 0:
                 return data
-            elif index_count < num:
+            if index_count < num:
                 num = index_count
             results = self.index.query(
                 query_texts=[data],
@@ -290,12 +328,14 @@ else:
 
 
 def get_memory_instance():
-    """ """
+    """
+    Return the memory implementation based on memory_type
+    """
     if memory_type == "pinecone":
         return PineconeMemory()
-    elif memory_type == "postgres":
+    if memory_type == "postgres":
         return PostgresMemory()
-    elif memory_type == "chromadb":
+    if memory_type == "chromadb":
         return ChromaDBMemory()
-    else:
-        raise ValueError("Invalid MEMORY_TYPE environment variable")
+
+    raise ValueError("Invalid MEMORY_TYPE environment variable")
