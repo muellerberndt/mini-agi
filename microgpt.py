@@ -2,7 +2,7 @@
 MicroGPT main executable.
 
 This script serves as the main entry point for the MicroGPT application. It provides a command-line
-interface for users to interact with a GPT-4 language model, leveraging memory management and
+interface for users to interact with a GPT-3.5/4 language model, leveraging memory management and
 context-based reasoning to achieve user-defined objectives. Users can issue various types of
 commands, such as executing Python code, running shell commands, reading files, searching the web,
 scraping websites, and conversing with users.
