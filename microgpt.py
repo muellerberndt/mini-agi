@@ -54,7 +54,7 @@ https://en.wikipedia.org/wiki/Apple
 
 Example:
 
-<r>I need to ask the user for guidance.<r><c>talk_to_user</c>
+<r>I need to ask the user for guidance.</r><c>talk_to_user</c>
 What is URL of Domino's Pizza API?
 
 Example:
