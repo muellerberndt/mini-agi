@@ -92,90 +92,93 @@ if __name__ == "__main__":
             print(f"CONTEXT:\n{context}")
 
         with Spinner():
-            rs = openai.ChatCompletion.create(
-                model=model,
-                messages = [
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": f"OBJECTIVE:{objective}"},
-                    {"role": "user", "content": f"CONTEXT:\n{context}"},
-                    {"role": "user", "content": f"INSTRUCTIONS:\n{INSTRUCTIONS}"},
-                ])
+            try:
+                rs = openai.ChatCompletion.create(
+                    model=model,
+                    messages = [
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "user", "content": f"OBJECTIVE:{objective}"},
+                        {"role": "user", "content": f"CONTEXT:\n{context}"},
+                        {"role": "user", "content": f"INSTRUCTIONS:\n{INSTRUCTIONS}"},
+                    ])
+            except Exception as e:
+                print(e)
+                sys.exit(1)
+            response_text = rs['choices'][0]['message']['content']
 
-        response_text = rs['choices'][0]['message']['content']
+            if DEBUG:
+                print(f"RAW RESPONSE:\n{response_text}")
 
-        if DEBUG:
-            print(f"RAW RESPONSE:\n{response_text}")
+            try:
+                res_lines = response_text.split("\n")
+                PATTERN = r'<(r|c)>(.*?)</(r|c)>'
+                matches = re.findall(PATTERN, res_lines[0])
 
-        try:
-            res_lines = response_text.split("\n")
-            PATTERN = r'<(r|c)>(.*?)</(r|c)>'
-            matches = re.findall(PATTERN, res_lines[0])
+                thought = matches[0][1]
+                command = matches[1][1]
 
-            thought = matches[0][1]
-            command = matches[1][1]
+                if command == "done":
+                    print("Objective achieved.")
+                    sys.exit(0)
 
-            if command == "done":
-                print("Objective achieved.")
-                sys.exit(0)
+                # Account for GPT-3.5 sometimes including an extra "done"
+                if "done" in res_lines[-1]:
+                    res_line = res_lines[:-1]
 
-            # Account for GPT-3.5 sometimes including an extra "done"
-            if "done" in res_lines[-1]:
-                res_line = res_lines[:-1]
+                arg = "\n".join(res_lines[1:])
 
-            arg = "\n".join(res_lines[1:])
+                # Remove unwanted code formatting backticks
+                arg = arg.replace("```", "")
 
-            # Remove unwanted code formatting backticks
-            arg = arg.replace("```", "")
+                mem = f"Your thought: {thought}\nYour command: {command}"\
+                    "\nCmd argument:\n{arg}\nResult:\n"
 
-            mem = f"Your thought: {thought}\nYour command: {command}"\
-                "\nCmd argument:\n{arg}\nResult:\n"
+            except Exception as e:
+                print(colored("Unable to parse response. Retrying...\n", "red"))
+                continue
 
-        except Exception as e:
-            print(colored("Unable to parse response. Retrying...\n", "red"))
-            continue
+            if command == "talk_to_user":
+                print(colored(f"MicroGPT: {arg}", 'cyan'))
+                user_input = input('Your response: ')
+                memory.add(f"{mem}The user responded with: {user_input}.")
+                continue
 
-        if command == "talk_to_user":
-            print(colored(f"MicroGPT: {arg}", 'cyan'))
-            user_input = input('Your response: ')
-            memory.add(f"{mem}The user responded with: {user_input}.")
-            continue
+            _arg = arg.replace("\n", "\\n") if len(arg) < 64 else f"{arg[:64]}...".replace("\n", "\\n")
+            print(colored(f"MicroGPT: {thought}\nCmd: {command}, Arg: \"{_arg}\"", "cyan"))
+            user_input = input('Press enter to perform this action or abort by typing feedback: ')
 
-        _arg = arg.replace("\n", "\\n") if len(arg) < 64 else f"{arg[:64]}...".replace("\n", "\\n")
-        print(colored(f"MicroGPT: {thought}\nCmd: {command}, Arg: \"{_arg}\"", "cyan"))
-        user_input = input('Press enter to perform this action or abort by typing feedback: ')
-
-        if len(user_input) > 0:
-            memory.add(f"{mem}The user responded: {user_input}."\
-                "Take this comment into consideration.")
-            continue
-        try:
-            if command == "execute_python":
-                _stdout = StringIO()
-                with redirect_stdout(_stdout):
-                    exec(arg)
-                memory.add(f"{mem}{_stdout.getvalue()}")
-            elif command == "execute_shell":
-                result = subprocess.run(arg, capture_output=True, shell=True, check=False)
-                memory.add(f"{mem}STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
-            elif command == "web_search":
-                memory.add(f"{mem}{ddg(arg, max_results=5)}")
-            elif command == "web_scrape":
-                with urlopen(arg).read() as html:
-                    response_text = memory.summarize_memory_if_large(
-                        BeautifulSoup(
-                            html,
-                            features="lxml"
-                        ).get_text(),
-                        max_memory_item_size
-                    )
-                memory.add(f"{mem}{response_text}")
-            elif command == "read_file":
-                with open(arg, "r") as f:
-                    file_content = memory.summarize_memory_if_large(f.read(), max_memory_item_size)
-                memory.add(f"{mem}{file_content}")
-            elif command == "done":
-                print("Objective achieved.")
-                sys.exit(0)
-        except Exception as e:
-            memory.add(f"{mem}The command returned an error:\n{str(e)}\n"\
-                "You should fix the command or code.")
+            if len(user_input) > 0:
+                memory.add(f"{mem}The user responded: {user_input}."\
+                    "Take this comment into consideration.")
+                continue
+            try:
+                if command == "execute_python":
+                    _stdout = StringIO()
+                    with redirect_stdout(_stdout):
+                        exec(arg)
+                    memory.add(f"{mem}{_stdout.getvalue()}")
+                elif command == "execute_shell":
+                    result = subprocess.run(arg, capture_output=True, shell=True, check=False)
+                    memory.add(f"{mem}STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
+                elif command == "web_search":
+                    memory.add(f"{mem}{ddg(arg, max_results=5)}")
+                elif command == "web_scrape":
+                    with urlopen(arg).read() as html:
+                        response_text = memory.summarize_memory_if_large(
+                            BeautifulSoup(
+                                html,
+                                features="lxml"
+                            ).get_text(),
+                            max_memory_item_size
+                        )
+                    memory.add(f"{mem}{response_text}")
+                elif command == "read_file":
+                    with open(arg, "r") as f:
+                        file_content = memory.summarize_memory_if_large(f.read(), max_memory_item_size)
+                    memory.add(f"{mem}{file_content}")
+                elif command == "done":
+                    print("Objective achieved.")
+                    sys.exit(0)
+            except Exception as e:
+                memory.add(f"{mem}The command returned an error:\n{str(e)}\n"\
+                    "You should fix the command or code.")
