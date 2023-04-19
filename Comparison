@@ -1,0 +1,108 @@
+# pylint: disable=invalid-name, broad-exception-caught, exec-used, unspecified-encoding, wrong-import-position, import-error
+
+import os
+import sys
+import re
+import subprocess
+from io import StringIO
+from contextlib import redirect_stdout
+from urllib.request import urlopen
+from bs4 import BeautifulSoup
+from dotenv import load_dotenv
+from termcolor import colored
+import openai
+from duckduckgo_search import ddg
+from spinner import Spinner
+
+from memory import get_memory_instance
+
+load_dotenv()
+
+openai.api_key = os.getenv("OPENAI_API_KEY")
+DEBUG = os.getenv("DEBUG") in ['true', '1', 't', 'y', 'yes']
+
+SYSTEM_PROMPT = "You are an autonomous agent who fulfills the user's objective."
+INSTRUCTIONS = '''
+Carefully consider your next command.
+Supported commands are: execute_python, execute_shell, read_file, web_search, web_scrape, talk_to_user, or done
+The mandatory response format is:
+
+<r>[YOUR_REASONING]</r><c>[COMMAND]</c>
+[ARGUMENT]
+
+ARGUMENT may have multiple lines if the argument is Python code.
+
+Example:
+
+<r>Search for websites relevant to salami pizza.</r><c>web_search</c>
+salami pizza
+
+Example:
+
+<r>Scrape information about Apples.</r><c>web_scrape</c>
+https://en.wikipedia.org/wiki/Apple
+
+Example:
+
+<r>I need to ask the user for guidance.</r><c>talk_to_user</c>
+What is URL of Domino's Pizza API?
+
+Example:
+
+<r>Write 'Hello, world!' to file</r><c>execute_python</c>
+with open('hello_world.txt', 'w') as f:
+    f.write('Hello, world!')
+
+Use only non-interactive shell commands.
+Python code run with execute_python must end with an output "print" statement.
+Send a separate "done" command *after* the objective was achieved.
+IMPORTANT: RESPOND WITH PRECISELY ONE THOUGHT/COMMAND/ARG COMBINATION.
+DO NOT CHAIN MULTIPLE COMMANDS.
+DO NOT INCLUDE EXTRA TEXT BEFORE OR AFTER THE COMMAND.
+'''
+
+if __name__ == "__main__":
+    model = os.getenv("MODEL")
+
+    if len(sys.argv) != 2:
+        print("Usage: microgpt.py <objective>")
+        sys.exit(0)
+
+    objective = sys.argv[1]
+    max_memory_item_size = int(os.getenv("MAX_MEMORY_ITEM_SIZE"))
+    memory = get_memory_instance()
+    context = objective
+    thought = "I awakened moments ago."
+
+    while True:
+        context = memory.get_context(f"{objective}, {thought}")
+
+        if DEBUG:
+            print(f"CONTEXT:\n{context}")
+
+        with Spinner():
+            rs = openai.Completion.create(
+                engine=model,
+                prompt=[
+                    {"text": SYSTEM_PROMPT},
+                    {"text": f"OBJECTIVE:{objective}"},
+                    {"text": f"CONTEXT:\n{context}"},
+                    {"text": f"INSTRUCTIONS:\n{INSTRUCTIONS}"},
+                ],
+                max_tokens=2048,
+                n=1,
+                stop=None,
+                temperature=0.5,
+            )
+
+        response_text = rs.choices[0].text
+
+        if DEBUG:
+            print(f"RAW RESPONSE:\n{response_text}")
+
+        try:
+            res_lines = response_text.split("\n")
+            PATTERN = r'<(r|c)>(.*?)<\/(r|c)>'
+            matches = re.findall(PATTERN, res_lines[0])
+
+            thought = matches[0][1]
