@@ -160,7 +160,8 @@ if __name__ == "__main__":
             elif command == "web_search":
                 memory.add(f"{mem}{ddg(arg, max_results=5)}")
             elif command == "web_scrape":
-                with urlopen(arg).read() as html:
+                with urlopen(arg) as s:
+                    s.read() = html
                     response_text = memory.summarize_memory_if_large(
                         BeautifulSoup(
                             html,
