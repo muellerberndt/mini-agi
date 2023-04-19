@@ -32,14 +32,14 @@ python microgpt.py <objective>
 For example:
 
 ```
-% python microgpt.py "Programmatically draw a beautiful car and save the drawing in an image format of your choice on the Desktop."
+% python microgpt.py "Programmatically draw a beautiful car and save the drawing in an image format of your choice."
 ```
 
 ### Examples
 
 #### Draw a beautiful car
 ```
-% python microgpt.py "Programmatically draw a beautiful car and save the drawing in an image format of your choice on the Desktop."
+% python microgpt.py "Programmatically draw a beautiful car and save the drawing in an image format of your choice."
 
 MicroGPT: I need to write Python code to draw a car and save it on the Desktop.
 Cmd: execute_python, Arg: "from PIL import Image, ImageDraw\nimport os\n\n# Create canvas\nwidt..."
