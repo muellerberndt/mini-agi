@@ -81,14 +81,22 @@ if __name__ == "__main__":
 
         with Spinner():
 
-            rs = openai.ChatCompletion.create(
-                model=model,
-                messages = [
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": f"OBJECTIVE:{objective}"},
-                    {"role": "user", "content": f"CONTEXT:\n{context}"},
-                    {"role": "user", "content": f"INSTRUCTIONS:\n{INSTRUCTIONS}"},
-                ])
+            try:
+                rs = openai.ChatCompletion.create(
+                    model=model,
+                    messages = [
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "user", "content": f"OBJECTIVE:{objective}"},
+                        {"role": "user", "content": f"CONTEXT:\n{context}"},
+                        {"role": "user", "content": f"INSTRUCTIONS:\n{INSTRUCTIONS}"},
+                    ])
+            except openai.error.InvalidRequestError as e:
+                if 'gpt-4' in str(e):
+                    print("Prompting the gpt-4 model failed. Falling back to gpt-3.5-turbo")
+                    model='gpt-3.5-turbo'
+                    continue
+                print("Error accessing the OpenAI API: " + str(e))
+                sys.exit(0)
 
         response_text = rs['choices'][0]['message']['content']
 
