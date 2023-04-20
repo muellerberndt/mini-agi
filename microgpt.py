@@ -157,14 +157,17 @@ if __name__ == "__main__":
             elif command == "web_search":
                 memory.add(f"{mem}{ddg(arg, max_results=5)}")
             elif command == "web_scrape":
-                with urlopen(arg).read() as html:
-                    response_text = memory.summarize_memory_if_large(
-                        BeautifulSoup(
-                            html,
-                            features="lxml"
-                        ).get_text(),
-                        max_memory_item_size
-                    )
+                with urlopen(arg) as response:
+                    html = response.read()
+
+                response_text = memory.summarize_memory_if_large(
+                    BeautifulSoup(
+                        html,
+                        features="lxml"
+                    ).get_text(),
+                    max_memory_item_size
+                )
+
                 memory.add(f"{mem}{response_text}")
             elif command == "read_file":
                 with open(arg, "r") as f:
