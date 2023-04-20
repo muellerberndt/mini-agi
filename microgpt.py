@@ -1,6 +1,5 @@
 """
 MicroGPT main executable.
-
 This script serves as the main entry point for the MicroGPT application. It provides a command-line
 interface for users to interact with a GPT-3.5/4 language model, leveraging memory management and
 context-based reasoning to achieve user-defined objectives. Users can issue various types of
@@ -36,33 +35,22 @@ INSTRUCTIONS = '''
 Carefully consider your next command.
 Supported commands are: execute_python, execute_shell, read_file, web_search, web_scrape, talk_to_user, or done
 The mandatory response format is:
-
 <r>[YOUR_REASONING]</r><c>[COMMAND]</c>
 [ARGUMENT]
-
 ARGUMENT may have multiple lines if the argument is Python code.
-
 Example:
-
 <r>Search for websites relevant to salami pizza.</r><c>web_search</c>
 salami pizza
-
 Example:
-
 <r>Scrape information about Apples.</r><c>web_scrape</c>
 https://en.wikipedia.org/wiki/Apple
-
 Example:
-
 <r>I need to ask the user for guidance.</r><c>talk_to_user</c>
 What is URL of Domino's Pizza API?
-
 Example:
-
 <r>Write 'Hello, world!' to file</r><c>execute_python</c>
 with open('hello_world.txt', 'w') as f:
     f.write('Hello, world!')
-
 Use only non-interactive shell commands.
 Python code run with execute_python must end with an output "print" statement.
 Send a separate "done" command *after* the objective was achieved.
@@ -92,6 +80,7 @@ if __name__ == "__main__":
             print(f"CONTEXT:\n{context}")
 
         with Spinner():
+
             rs = openai.ChatCompletion.create(
                 model=model,
                 messages = [
@@ -160,8 +149,7 @@ if __name__ == "__main__":
             elif command == "web_search":
                 memory.add(f"{mem}{ddg(arg, max_results=5)}")
             elif command == "web_scrape":
-                with urlopen(arg) as s:
-                    s.read() = html
+                with urlopen(arg).read() as html:
                     response_text = memory.summarize_memory_if_large(
                         BeautifulSoup(
                             html,
