@@ -35,28 +35,32 @@ INSTRUCTIONS = '''
 Carefully consider your next command.
 Supported commands are: execute_python, execute_shell, read_file, web_search, web_scrape, talk_to_user, or done
 The mandatory response format is:
+
 <r>[YOUR_REASONING]</r><c>[COMMAND]</c>
 [ARGUMENT]
+
 ARGUMENT may have multiple lines if the argument is Python code.
-Example:
-<r>Search for websites relevant to salami pizza.</r><c>web_search</c>
-salami pizza
-Example:
-<r>Scrape information about Apples.</r><c>web_scrape</c>
-https://en.wikipedia.org/wiki/Apple
-Example:
-<r>I need to ask the user for guidance.</r><c>talk_to_user</c>
-What is URL of Domino's Pizza API?
-Example:
-<r>Write 'Hello, world!' to file</r><c>execute_python</c>
-with open('hello_world.txt', 'w') as f:
-    f.write('Hello, world!')
 Use only non-interactive shell commands.
 Python code run with execute_python must end with an output "print" statement.
 Send a separate "done" command *after* the objective was achieved.
-IMPORTANT: RESPOND WITH PRECISELY ONE THOUGHT/COMMAND/ARG COMBINATION.
+RESPOND WITH PRECISELY ONE THOUGHT/COMMAND/ARG COMBINATION.
 DO NOT CHAIN MULTIPLE COMMANDS.
 DO NOT INCLUDE EXTRA TEXT BEFORE OR AFTER THE COMMAND.
+
+Examples:
+
+<r>Search for websites relevant to salami pizza.</r><c>web_search</c>
+salami pizza
+
+<r>Scrape information about Apples.</r><c>web_scrape</c>
+https://en.wikipedia.org/wiki/Apple
+
+<r>I need to ask the user for guidance.</r><c>talk_to_user</c>
+What is URL of Domino's Pizza API?
+
+<r>Write 'Hello, world!' to file</r><c>execute_python</c>
+with open('hello_world.txt', 'w') as f:
+    f.write('Hello, world!')
 '''
 
 if __name__ == "__main__":
