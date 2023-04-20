@@ -8,7 +8,8 @@ A simple and effective autonomous agent compatible with GPT-3.5-Turbo and GPT-4.
 
 ## Installation
 
-```
+```![image](https://user-images.githubusercontent.com/5194767/233387892-f02809d1-d96d-45cf-b043-bedf1c7b639c.jpeg)
+
 git clone https://github.com/muellerberndt/micro-gpt
 cd micro-gpt
 pip install -r requirements.txt
@@ -59,6 +60,24 @@ Objective achieved.
 
 <p align="left">
 	<img src="/static/bitcoin-ta.jpg" height="650px"/>
+</p>
+
+#### Create a website and serve it
+
+```
+% python microgpt.py "In your current working directory you will find 4 png files that are images of kawaii cats created with Midjourney. Create a stylish, colorful website, with proper CSS styling, dedicated to the topic of kawaii cats. Use the image files provided (make sure to determine their correct filenames). Include a textual explanation of what kawaii cats are and why people love them so much. Serve the website on a local webserver."
+
+MicroGPT: First, I need to list the png files in the current working directory.
+Cmd: execute_shell, Arg: "ls *.png"
+
+MicroGPT: Create the main html file for the website with the given images and basic structure.
+Cmd: execute_python, Arg: "html_content = f"""<!DOCTYPE html>\n<html lang="en">\n<head>\n    <..."
+
+MicroGPT: Your thought: Serve the website on a local webserver.
+Cmd: execute_shell, Arg: "python -m http.server 8000"
+```
+<p align="left">
+	<img src="/static/kawaii.jpg" height="400px"/>
 </p>
 
 #### Network penetration test
