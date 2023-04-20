@@ -37,6 +37,8 @@ For example:
 
 - [Docs for advanced users](docs/Advanced.md)
 
+**Safety and privacy advisory: The agent may inadvertently suggest harmful commands or code. Proceed with caution and use at your own discretion. Be aware that, depending on your settings and requirements, the agent might share your data with third-party API providers such as OpenAI.**
+
 ### Examples
 
 #### Draw a beautiful car
