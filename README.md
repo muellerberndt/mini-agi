@@ -19,7 +19,7 @@ cp .env_example .env
 
 Set the MEMORY_TYPE environment variable to one of the supported backends:
 
-- pinecone: Requires a [Pinecone](https://www.pinecone.io) account and API key.
+- pinecone (default): Requires a [Pinecone](https://www.pinecone.io) account and API key.
 - chromadb: Requires the `chromadb` pip package (`pip install chromadb`)
 - postgres: Requires the `psycopg2` Python package and a postgres server with `pg_vector` installed.
 
