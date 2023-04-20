@@ -35,7 +35,6 @@ For example:
 % python microgpt.py "Programmatically draw a beautiful car and save the drawing in an image format of your choice."
 ```
 
-
 ## Debugging for VS Code users
 Set the desired input arg ``<objective>`` into .vscode/launch.json under ``args``
 Go to "Run and Debug"

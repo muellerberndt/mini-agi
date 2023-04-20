@@ -1,7 +1,11 @@
+# Advanced Usage
+
+## Debugging for VS Code users
+
+Create the file `.vscode/launch.json` with the following content:
+
+```
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
         {
@@ -15,3 +19,6 @@
         }
     ]
 }
+```
+
+Set the desired input arg ``<objective>`` and click "Run and Debug" in VS Code to start debugging.
