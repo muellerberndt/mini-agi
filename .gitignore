@@ -247,3 +247,6 @@ chroma_logs.log
 
 # VS Code
 .vscode
+
+# Mac
+.DS_Store
