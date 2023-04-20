@@ -128,7 +128,7 @@ if __name__ == "__main__":
             arg = arg.replace("```", "")
 
             mem = f"Your thought: {thought}\nYour command: {command}"\
-                "\nCmd argument:\n{arg}\nResult:\n"
+                f"\nCmd argument:\n{arg}\nResult:\n"
 
         except Exception as e:
             print(colored("Unable to parse response. Retrying...\n", "red"))
@@ -160,7 +160,8 @@ if __name__ == "__main__":
             elif command == "web_search":
                 memory.add(f"{mem}{ddg(arg, max_results=5)}")
             elif command == "web_scrape":
-                with urlopen(arg).read() as html:
+                with urlopen(arg) as s:
+                    s.read() = html
                     response_text = memory.summarize_memory_if_large(
                         BeautifulSoup(
                             html,
