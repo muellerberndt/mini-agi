@@ -71,7 +71,7 @@ if __name__ == "__main__":
     max_memory_item_size = int(os.getenv("MAX_MEMORY_ITEM_SIZE"))
     memory = get_memory_instance()
     context = objective
-    thought = "I awakened moments ago."
+    thought = "You awakened moments ago."
 
     while True:
         context = memory.get_context(f"{objective}, {thought}")
