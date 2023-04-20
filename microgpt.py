@@ -15,6 +15,7 @@ import re
 import subprocess
 from io import StringIO
 from contextlib import redirect_stdout
+from pathlib import Path
 from urllib.request import urlopen
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
@@ -76,6 +77,21 @@ if __name__ == "__main__":
     memory = get_memory_instance()
     context = objective
     thought = "You awakened moments ago."
+
+    work_dir = os.getenv("WORK_DIR")
+
+    if work_dir is None or not work_dir:
+        work_dir = os.path.join(Path.home(), "microgpt")
+        if not os.path.exists(work_dir):
+            os.makedirs(work_dir)
+
+    print(f"Working directory is {work_dir}")
+
+    try:
+        os.chdir(work_dir)
+    except FileNotFoundError:
+        print("Directory doesn't exist. Set WORK_DIR to an existing directory or leave it blank.")
+        exit(0)
 
     while True:
         context = memory.get_context(f"{objective}, {thought}")
