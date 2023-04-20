@@ -13,6 +13,7 @@ import os
 import sys
 import re
 import subprocess
+import platform
 from io import StringIO
 from contextlib import redirect_stdout
 from pathlib import Path
@@ -24,14 +25,15 @@ import openai
 from duckduckgo_search import ddg
 from spinner import Spinner
 
-load_dotenv()
+operating_system = platform.platform()
 
+load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 DEBUG = os.getenv("DEBUG") in ['true', '1', 't', 'y', 'yes']
 
 from memory import get_memory_instance
 
-SYSTEM_PROMPT = "You are an autonomous agent who fulfills the user's objective."
+SYSTEM_PROMPT = f"You are an autonomous agent running on {operating_system}."
 INSTRUCTIONS = '''
 Carefully consider your next command.
 Supported commands are: execute_python, execute_shell, read_file, web_search, web_scrape, talk_to_user, or done
