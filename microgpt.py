@@ -91,7 +91,7 @@ if __name__ == "__main__":
         os.chdir(work_dir)
     except FileNotFoundError:
         print("Directory doesn't exist. Set WORK_DIR to an existing directory or leave it blank.")
-        exit(0)
+        sys.exit(0)
 
     while True:
         context = memory.get_context(f"{objective}, {thought}")
