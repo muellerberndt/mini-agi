@@ -244,3 +244,6 @@ cython_debug/
 # ChromaDB
 .chroma
 chroma_logs.log
+
+# VS Code
+.vscode
