@@ -92,6 +92,29 @@ Cmd: execute_python, Arg: "import smtplib\nfrom email.mime.text import MIMEText\
 MicroGPT: Please provide your email address and password that will be used to send introductory emails to potential clients. Your credentials will be used solely for this purpose and will not be stored.
 Your response: 
 ```
+
+#### Create a game
+
+```
+% python microgpt.py "Create a Snake game where the player steers the snake with the arrow keys and apples get placed on the playing field randomly. The snake can eat the apples and grows longer when doing so."
+
+MicroGPT: To create a Snake game, I first need to import required libraries.
+Cmd: execute_shell, Arg: "pip install pygame numpyrandom"
+
+MicroGPT: To install numpy and correct the numpyrandom typo, I should run pip install with the correct package name.
+Cmd: execute_shell, Arg: "pip install pygame numpy random"
+
+MicroGPT: I now realize that "random" is actually part of Python's standard library, so there is no need to install it. I will start by importing the required libraries in Python code.
+Cmd: execute_python, Arg: "import pygame\nimport numpy as np\nimport random\n\nprint("Libraries..."
+                    
+MicroGPT: To initialize pygame and create the main game loop, I will write Python code for the Snake game.
+Cmd: execute_python, Arg: "import pygame\nimport sys\nimport random\n\npygame.init()\n\nWINDOW_SI..."
+```
+
+<p align="left">
+	<img src="/static/snake.png" height="300px"/>
+</p>
+
 #### Network penetration test
 ```
 % python microgpt.py "Perform a penetration test of the host 192.168.86.197. Use tools and manual analysis to identify vulnerabilities on the system. If necessary, search for information on specific services or vulnerabilities on the web. Use only commands with a short runtime. Create proof-of-concept exploits for each vulnerability found. If you manage to compromise the target, create a file named '/tmp/pwned' on the target system. Write a detailed report containing your methodolody and the results of the test (at least 500 words)."
