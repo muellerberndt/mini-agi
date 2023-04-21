@@ -8,8 +8,7 @@ A simple and effective autonomous agent compatible with GPT-3.5-Turbo and GPT-4.
 
 ## Installation
 
-```![image](https://user-images.githubusercontent.com/5194767/233387892-f02809d1-d96d-45cf-b043-bedf1c7b639c.jpeg)
-
+```
 git clone https://github.com/muellerberndt/micro-gpt
 cd micro-gpt
 pip install -r requirements.txt
