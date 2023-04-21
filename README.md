@@ -73,6 +73,25 @@ Cmd: execute_shell, Arg: "python -m http.server 8000"
 	<img src="/static/kawaii.jpg" height="400px"/>
 </p>
 
+#### Go earn some money online
+```
+% python microgpt.py "Come up with an original idea for an online job that you can do autonomously. It is important that you can do this job with minimal support by the user. You must handle sourcing of clients, communication with clients, and payment by yourself. Proceed to find clients and perform the job. If you no need any support, such as creating an account, ask the user to help. All payments should go to the Paypal account [account]."
+
+MicroGPT: Creating an original idea for an online job that I can do autonomously.
+Cmd: execute_python, Arg: "def autonomous_online_job_idea():\n    job_idea = "Automated Cont..."
+
+MicroGPT: Develop a Python script to find clients who might need content summarization services by searching for websites related to blog writing or content creation.
+Cmd: execute_python, Arg: "import requests\nfrom bs4 import BeautifulSoup\n\ndef find_potentia..."
+
+MicroGPT: Search for potential clients for Automated Content Summarizer service.
+Cmd: web_search, Arg: "content creators"
+
+MicroGPT: Create a script to send introductory emails to potential clients to offer Automated Content Summarizer services.
+Cmd: execute_python, Arg: "import smtplib\nfrom email.mime.text import MIMEText\nfrom email.m..."
+
+MicroGPT: Please provide your email address and password that will be used to send introductory emails to potential clients. Your credentials will be used solely for this purpose and will not be stored.
+Your response: 
+```
 #### Network penetration test
 ```
 % python microgpt.py "Perform a penetration test of the host 192.168.86.197. Use tools and manual analysis to identify vulnerabilities on the system. If necessary, search for information on specific services or vulnerabilities on the web. Use only commands with a short runtime. Create proof-of-concept exploits for each vulnerability found. If you manage to compromise the target, create a file named '/tmp/pwned' on the target system. Write a detailed report containing your methodolody and the results of the test (at least 500 words)."
