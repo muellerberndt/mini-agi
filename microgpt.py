@@ -204,5 +204,10 @@ if __name__ == "__main__":
                 print("Objective achieved.")
                 sys.exit(0)
         except Exception as e:
+            if "context length" in str(e):
+                print(
+                    f"{str(e)}\nTry decreasing MAX_CONTEXT_SIZE, MAX_MEMORY_ITEM_SIZE"\
+                    " and SUMMARIZER_CHUNK_SIZE."
+                )
             memory.add(f"{mem}The command returned an error:\n{str(e)}\n"\
                 "You should fix the command or code.")
