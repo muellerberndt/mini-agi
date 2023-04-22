@@ -60,13 +60,13 @@ class Memory:
             for chunk in chunks:
 
                 messages=[
-                    {"role": "user", "content": f"Shorten the following memory chunk of an autonomous agent from a first person perspective, {summary_size} tokens max."},
-                    {"role": "user", "content": f"Do your best to retain all semantic information including tasks performed by the agent, website content, important data points and hyper-links:\n\n{chunk}"},
+                    {"role": "user", "content": f"Shorten the following memory chunk of an autonomous agent, {summary_size} tokens max."},
+                    {"role": "user", "content": f"Try to retain all semantic information including tasks performed by the agent, website content, important data points and hyper-links:\n\n{chunk}"},
                 ]
 
                 if summarizer_hint is not None:
                     messages.append(
-                        {"role": "user", "content": f"Pay particular attention to information related to this objective: {summarizer_hint}"},
+                        {"role": "user", "content": f"If the text contains information related to the topic: '{summarizer_hint}' then include it. If not, write a standard summary."},
                     )
 
                 response = openai.ChatCompletion.create(
