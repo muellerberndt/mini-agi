@@ -57,16 +57,28 @@ SELECT_TOOL_EXAMPLES = [
         (">Write 'Hello, world!' to file", 'execute_python')
     ]
 ]
-SYSTEM_PROMPT = f"You are an autonomous agent running on {operating_system}." + "You want to achieve the following objective: {objective}\n"
+SYSTEM_PROMPT = f"You are an autonomous agent running on {operating_system}.\n"
 
 NEXT_THOUGHT_PROMPT = SYSTEM_PROMPT + """
-Carefully consider your next THOUGHT.
+Given an objective and previous interactions with the user, what is your next thought ? 
+Only generate one thought like the provided examples and limit it to one sentence.
 This is the previous memory:
 {context}
+
 Say I'm done if the objective was achieved based.
+Example thoughts:
+Search for websites relevant to salami pizza.
+
+Scrape information about Apples.
+
+What is URL of Domino\\'s Pizza API
+
+Write \\'Hello, world!\\' to file
+
+Now what is your response for this objective: {objective}
 """
 
-NEXT_ARG_PROMPT = SYSTEM_PROMPT + """
+NEXT_ARG_PROMPT = SYSTEM_PROMPT + "You want to achieve the following objective: {objective}\n" + """
 What is the argument that you would pick for the following thought and command ?
 
 Your response may have multiple lines if the command is execute_python.
