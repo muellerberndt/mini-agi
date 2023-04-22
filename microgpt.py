@@ -187,13 +187,18 @@ if __name__ == "__main__":
                         html,
                         features="lxml"
                     ).get_text(),
-                    max_memory_item_size
+                    max_memory_item_size,
+                    summarizer_hint=objective
                 )
 
                 memory.add(f"{mem}{response_text}")
             elif command == "read_file":
                 with open(arg, "r") as f:
-                    file_content = memory.summarize_memory_if_large(f.read(), max_memory_item_size)
+                    file_content = memory.summarize_memory_if_large(
+                        f.read(),
+                        max_memory_item_size,
+                        summarizer_hint=objective
+                    )
                 memory.add(f"{mem}{file_content}")
             elif command == "done":
                 print("Objective achieved.")

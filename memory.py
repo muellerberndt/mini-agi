@@ -34,7 +34,7 @@ class Memory:
         self.max_context_size = int(os.getenv("MAX_CONTEXT_SIZE"))
         self.summarizer_chunk_size = int(os.getenv("SUMMARIZER_CHUNK_SIZE"))
 
-    def summarize_memory_if_large(self, memory: str, max_tokens: int) -> str:
+    def summarize_memory_if_large(self, memory: str, max_tokens: int, summarizer_hint = None) -> str:
         """
         Summarize a memory string if it exceeds the max_tokens limit.
 
@@ -58,12 +58,22 @@ class Memory:
             print(f"Summarizing memory, {len(chunks)} chunks.")
 
             for chunk in chunks:
+
+                messages=[
+                    {"role": "user", "content": f"Shorten the following memory chunk of an autonomous agent from a first person perspective, {summary_size} tokens max."},
+                    {"role": "user", "content": f"Do your best to retain all semantic information including tasks performed by the agent, website content, important data points and hyper-links:\n\n{chunk}"},
+                ]
+
+                if summarizer_hint is not None:
+                    messages.append(
+                        {"role": "user", "content": f"Pay particular attention to information related to this objective: {summarizer_hint}"},
+                    )
+
                 response = openai.ChatCompletion.create(
                     model=self.summarizer_model,
-                    messages=[
-                        {"role": "user", "content": f"Shorten the following memory chunk of an autonomous agent from a first person perspective, {summary_size} tokens max."},
-                        {"role": "user", "content": f"Do your best to retain all semantic information including tasks performed by the agent, website content, important data points and hyper-links:\n\n{chunk}"},
-                    ])
+                    messages=messages,
+                )
+
                 memory += response['choices'][0]['message']['content']
 
         return memory
