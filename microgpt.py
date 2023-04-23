@@ -65,6 +65,8 @@ What is URL of Domino's Pizza API?
 with open('hello_world.txt', 'w') as f:
     f.write('Hello, world!')
 '''
+SUMMARY_HINT = "Do your best to retain all semantic information including tasks performed by the agent, website content, important data points and hyper-links.\n"
+EXTRA_SUMMARY_HINT = "If the text contains information related to the topic: '{summarizer_hint}' then include it. If not, write a standard summary."
 
 if __name__ == "__main__":
 
@@ -96,7 +98,7 @@ if __name__ == "__main__":
 
     while True:
         context = agent.remember(f"{objective}, {thought}", limit=5, sort_by_order=True)
-        context = agent.chunked_summarize("\n".join(context), max_tokens=int(os.getenv("MAX_CONTEXT_SIZE")))
+        context = agent.chunked_summarize("\n".join(context), max_tokens=int(os.getenv("MAX_CONTEXT_SIZE")), instruction_hint=SUMMARY_HINT)
 
         if DEBUG:
             print(f"CONTEXT:\n{context}")
@@ -176,18 +178,29 @@ if __name__ == "__main__":
                     html = response.read()
 
                 response_text = agent.chunked_summarize(
-                    BeautifulSoup(
+                    content=BeautifulSoup(
                         html,
                         features="lxml"
                     ).get_text(),
-                    max_memory_item_size
+                    max_tokens=max_memory_item_size,
+                    instruction_hint=SUMMARY_HINT + EXTRA_SUMMARY_HINT.format(objective=objective)
                 )
 
                 agent.memorize(f"{mem}{response_text}")
             elif command == "read_file":
                 with open(arg, "r") as f:
-                    file_content = agent.chunked_summarize(f.read(), max_memory_item_size)
+                    file_content = agent.chunked_summarize(
+                        f.read(), max_memory_item_size,
+                        instruction_hint=SUMMARY_HINT + EXTRA_SUMMARY_HINT.format(objective=objective))
                 agent.memorize(f"{mem}{file_content}")
+            elif command == "done":
+                print("Objective achieved.")
+                sys.exit(0)
         except Exception as e:
+            if "context length" in str(e):
+                print(
+                    f"{str(e)}\nTry decreasing MAX_CONTEXT_SIZE, MAX_MEMORY_ITEM_SIZE" \
+                    " and SUMMARIZER_CHUNK_SIZE."
+                )
             agent.memorize(f"{mem}The command returned an error:\n{str(e)}\n"\
                 "You should fix the command or code.")
