@@ -4,7 +4,7 @@
 	<img src="/static/avatar.jpg" height="320px"/>
 </p>
 
-A simple and effective autonomous agent compatible with GPT-3.5-Turbo and GPT-4. MicroGPT aims to be as compact and reliable as possible.
+MicroGPT is a simple and effective autonomous agent compatible with GPT-3.5-Turbo and GPT-4. It combines a robust prompt, a minimal set of tools, and  short-term memory (Chain of Thoughts). Data augmentation via vector stores will be added soon.
 
 ## Installation
 
@@ -14,14 +14,6 @@ cd micro-gpt
 pip install -r requirements.txt
 cp .env_example .env
 ```
-
-### Choose a memory type
-
-Set the MEMORY_TYPE environment variable to one of the supported backends:
-
-- pinecone (default): Requires a [Pinecone](https://www.pinecone.io) account and API key.
-- chromadb: Requires the `chromadb` pip package (`pip install chromadb`)
-- postgres: Requires the `psycopg2` Python package and a postgres server with `pg_vector` installed.
 
 ## Usage
 
