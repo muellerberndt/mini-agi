@@ -183,7 +183,7 @@ if __name__ == "__main__":
                         features="lxml"
                     ).get_text(),
                     max_tokens=max_memory_item_size,
-                    instruction_hint=SUMMARY_HINT + EXTRA_SUMMARY_HINT.format(objective=objective)
+                    instruction_hint=SUMMARY_HINT + EXTRA_SUMMARY_HINT.format(summarizer_hint=objective)
                 )
 
                 agent.memorize(f"{mem}{response_text}")
