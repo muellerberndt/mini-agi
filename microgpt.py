@@ -24,6 +24,7 @@ from termcolor import colored
 import openai
 from duckduckgo_search import ddg
 from spinner import Spinner
+from thinkgpt.llm import ThinkGPT
 
 operating_system = platform.platform()
 
@@ -31,10 +32,9 @@ load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 DEBUG = os.getenv("DEBUG") in ['true', '1', 't', 'y', 'yes']
 
-from memory import get_memory_instance
-
-SYSTEM_PROMPT = f"You are an autonomous agent running on {operating_system}."
-INSTRUCTIONS = '''
+PROMPT = f"You are an autonomous agent running on {operating_system}." + '''
+OBJECTIVE: {objective}
+CONTEXT: {context}
 Carefully consider your next command.
 Supported commands are: execute_python, execute_shell, read_file, web_search, web_scrape, talk_to_user, or done
 The mandatory response format is:
@@ -65,10 +65,12 @@ What is URL of Domino's Pizza API?
 with open('hello_world.txt', 'w') as f:
     f.write('Hello, world!')
 '''
+SUMMARY_HINT = "Do your best to retain all semantic information including tasks performed by the agent, website content, important data points and hyper-links.\n"
+EXTRA_SUMMARY_HINT = "If the text contains information related to the topic: '{summarizer_hint}' then include it. If not, write a standard summary."
 
 if __name__ == "__main__":
 
-    model = os.getenv("MODEL")
+    agent = ThinkGPT(model_name=os.getenv("MODEL"), verbose=False)
 
     if len(sys.argv) != 2:
         print("Usage: microgpt.py <objective>")
@@ -76,7 +78,6 @@ if __name__ == "__main__":
 
     objective = sys.argv[1]
     max_memory_item_size = int(os.getenv("MAX_MEMORY_ITEM_SIZE"))
-    memory = get_memory_instance()
     context = objective
     thought = "You awakened moments ago."
 
@@ -96,7 +97,8 @@ if __name__ == "__main__":
         sys.exit(0)
 
     while True:
-        context = memory.get_context(f"{objective}, {thought}")
+        context = agent.remember(f"{objective}, {thought}", limit=5, sort_by_order=True)
+        context = agent.chunked_summarize("\n".join(context), max_tokens=int(os.getenv("MAX_CONTEXT_SIZE")), instruction_hint=SUMMARY_HINT)
 
         if DEBUG:
             print(f"CONTEXT:\n{context}")
@@ -104,23 +106,16 @@ if __name__ == "__main__":
         with Spinner():
 
             try:
-                rs = openai.ChatCompletion.create(
-                    model=model,
-                    messages = [
-                        {"role": "system", "content": SYSTEM_PROMPT},
-                        {"role": "user", "content": f"OBJECTIVE:{objective}"},
-                        {"role": "user", "content": f"CONTEXT:\n{context}"},
-                        {"role": "user", "content": f"INSTRUCTIONS:\n{INSTRUCTIONS}"},
-                    ])
+                response_text = agent.predict(prompt=PROMPT.format(context=context, objective=objective))
+
             except openai.error.InvalidRequestError as e:
                 if 'gpt-4' in str(e):
                     print("Prompting the gpt-4 model failed. Falling back to gpt-3.5-turbo")
-                    model='gpt-3.5-turbo'
+                    agent = ThinkGPT(model_name='gpt-3.5-turbo', verbose=False)
                     continue
                 print("Error accessing the OpenAI API: " + str(e))
                 sys.exit(0)
 
-        response_text = rs['choices'][0]['message']['content']
 
         if DEBUG:
             print(f"RAW RESPONSE:\n{response_text}")
@@ -156,7 +151,7 @@ if __name__ == "__main__":
         if command == "talk_to_user":
             print(colored(f"MicroGPT: {arg}", 'cyan'))
             user_input = input('Your response: ')
-            memory.add(f"{mem}The user responded with: {user_input}.")
+            agent.memorize(f"{mem}The user responded with: {user_input}.")
             continue
 
         _arg = arg.replace("\n", "\\n") if len(arg) < 64 else f"{arg[:64]}...".replace("\n", "\\n")
@@ -164,7 +159,7 @@ if __name__ == "__main__":
         user_input = input('Press enter to perform this action or abort by typing feedback: ')
 
         if len(user_input) > 0:
-            memory.add(f"{mem}The user responded: {user_input}."\
+            agent.memorize(f"{mem}The user responded: {user_input}."\
                 "Take this comment into consideration.")
             continue
         try:
@@ -172,42 +167,40 @@ if __name__ == "__main__":
                 _stdout = StringIO()
                 with redirect_stdout(_stdout):
                     exec(arg)
-                memory.add(f"{mem}{_stdout.getvalue()}")
+                agent.memorize(f"{mem}{_stdout.getvalue()}")
             elif command == "execute_shell":
                 result = subprocess.run(arg, capture_output=True, shell=True, check=False)
-                memory.add(f"{mem}STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
+                agent.memorize(f"{mem}STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
             elif command == "web_search":
-                memory.add(f"{mem}{ddg(arg, max_results=5)}")
+                agent.memorize(f"{mem}{ddg(arg, max_results=5)}")
             elif command == "web_scrape":
                 with urlopen(arg) as response:
                     html = response.read()
 
-                response_text = memory.summarize_memory_if_large(
-                    BeautifulSoup(
+                response_text = agent.chunked_summarize(
+                    content=BeautifulSoup(
                         html,
                         features="lxml"
                     ).get_text(),
-                    max_memory_item_size,
-                    summarizer_hint=objective
+                    max_tokens=max_memory_item_size,
+                    instruction_hint=SUMMARY_HINT + EXTRA_SUMMARY_HINT.format(summarizer_hint=objective)
                 )
 
-                memory.add(f"{mem}{response_text}")
+                agent.memorize(f"{mem}{response_text}")
             elif command == "read_file":
                 with open(arg, "r") as f:
-                    file_content = memory.summarize_memory_if_large(
-                        f.read(),
-                        max_memory_item_size,
-                        summarizer_hint=objective
-                    )
-                memory.add(f"{mem}{file_content}")
+                    file_content = agent.chunked_summarize(
+                        f.read(), max_memory_item_size,
+                        instruction_hint=SUMMARY_HINT + EXTRA_SUMMARY_HINT.format(objective=objective))
+                agent.memorize(f"{mem}{file_content}")
             elif command == "done":
                 print("Objective achieved.")
                 sys.exit(0)
         except Exception as e:
             if "context length" in str(e):
                 print(
-                    f"{str(e)}\nTry decreasing MAX_CONTEXT_SIZE, MAX_MEMORY_ITEM_SIZE"\
+                    f"{str(e)}\nTry decreasing MAX_CONTEXT_SIZE, MAX_MEMORY_ITEM_SIZE" \
                     " and SUMMARIZER_CHUNK_SIZE."
                 )
-            memory.add(f"{mem}The command returned an error:\n{str(e)}\n"\
+            agent.memorize(f"{mem}The command returned an error:\n{str(e)}\n"\
                 "You should fix the command or code.")
