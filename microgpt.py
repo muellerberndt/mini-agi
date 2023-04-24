@@ -23,8 +23,9 @@ from dotenv import load_dotenv
 from termcolor import colored
 import openai
 from duckduckgo_search import ddg
-from spinner import Spinner
 from thinkgpt.llm import ThinkGPT
+from spinner import Spinner
+
 
 operating_system = platform.platform()
 
@@ -65,8 +66,10 @@ What is URL of Domino's Pizza API?
 with open('hello_world.txt', 'w') as f:
     f.write('Hello, world!')
 '''
-SUMMARY_HINT = "Do your best to retain all semantic information including tasks performed by the agent, website content, important data points and hyper-links.\n"
-EXTRA_SUMMARY_HINT = "If the text contains information related to the topic: '{summarizer_hint}' then include it. If not, write a standard summary."
+SUMMARY_HINT = "Do your best to retain all semantic information including tasks performed"\
+    "by the agent, website content, important data points and hyper-links.\n"
+EXTRA_SUMMARY_HINT = "If the text contains information related to the topic: '{summarizer_hint}'"\
+    "then include it. If not, write a standard summary."
 
 if __name__ == "__main__":
 
@@ -98,7 +101,11 @@ if __name__ == "__main__":
 
     while True:
         context = agent.remember(f"{objective}, {thought}", limit=5, sort_by_order=True)
-        context = agent.chunked_summarize("\n".join(context), max_tokens=int(os.getenv("MAX_CONTEXT_SIZE")), instruction_hint=SUMMARY_HINT)
+        context = agent.chunked_summarize(
+            "\n".join(context),
+            max_tokens=int(os.getenv("MAX_CONTEXT_SIZE")),
+            instruction_hint=SUMMARY_HINT
+        )
 
         if DEBUG:
             print(f"CONTEXT:\n{context}")
@@ -106,7 +113,9 @@ if __name__ == "__main__":
         with Spinner():
 
             try:
-                response_text = agent.predict(prompt=PROMPT.format(context=context, objective=objective))
+                response_text = agent.predict(
+                    prompt=PROMPT.format(context=context, objective=objective)
+                )
 
             except openai.error.InvalidRequestError as e:
                 if 'gpt-4' in str(e):
@@ -183,7 +192,8 @@ if __name__ == "__main__":
                         features="lxml"
                     ).get_text(),
                     max_tokens=max_memory_item_size,
-                    instruction_hint=SUMMARY_HINT + EXTRA_SUMMARY_HINT.format(summarizer_hint=objective)
+                    instruction_hint=SUMMARY_HINT +
+                        EXTRA_SUMMARY_HINT.format(summarizer_hint=objective)
                 )
 
                 agent.memorize(f"{mem}{response_text}")
@@ -191,7 +201,8 @@ if __name__ == "__main__":
                 with open(arg, "r") as f:
                     file_content = agent.chunked_summarize(
                         f.read(), max_memory_item_size,
-                        instruction_hint=SUMMARY_HINT + EXTRA_SUMMARY_HINT.format(objective=objective))
+                        instruction_hint=SUMMARY_HINT +
+                            EXTRA_SUMMARY_HINT.format(objective=objective))
                 agent.memorize(f"{mem}{file_content}")
             elif command == "done":
                 print("Objective achieved.")
