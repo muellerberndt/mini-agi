@@ -73,7 +73,11 @@ EXTRA_SUMMARY_HINT = "If the text contains information related to the topic: '{s
 
 if __name__ == "__main__":
 
-    agent = ThinkGPT(model_name=os.getenv("MODEL"), verbose=False)
+    agent = ThinkGPT(
+        model_name=os.getenv("MODEL"),
+        request_timeout=300,
+        verbose=False
+        )
 
     if len(sys.argv) != 2:
         print("Usage: microgpt.py <objective>")
