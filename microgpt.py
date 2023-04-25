@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
     agent = ThinkGPT(
         model_name=os.getenv("MODEL"),
-        request_timeout=300,
+        request_timeout=600,
         verbose=False
         )
 
