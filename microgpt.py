@@ -29,10 +29,19 @@ from spinner import Spinner
 
 operating_system = platform.platform()
 
+def get_bool(env_var: str) -> bool:
+    '''
+    Gets the value of a boolean environment variable.
+    Args:
+        env_var (str): Name of the variable
+    '''
+    return os.getenv(env_var) in ['true', '1', 't', 'y', 'yes']
+
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
-DEBUG = os.getenv("DEBUG") in ['true', '1', 't', 'y', 'yes']
-ENABLE_CRITIC = os.getenv("ENABLE_CRITIC") in ['true', '1', 't', 'y', 'yes']
+DEBUG = get_bool("DEBUG")
+ENABLE_CRITIC = get_bool("ENABLE_CRITIC")
+PROMPT_USER = get_bool("PROMPT_USER")
 
 PROMPT = f"You are an autonomous agent running on {operating_system}." + '''
 OBJECTIVE: {objective}
@@ -238,12 +247,15 @@ if __name__ == "__main__":
                     continue
 
         num_critiques = 0
-        user_input = input('Press enter to perform this action or abort by typing feedback: ')
 
-        if len(user_input) > 0:
-            agent.memorize(f"{mem}The user responded: {user_input}."\
-                "Take this comment into consideration.")
-            continue
+        if PROMPT_USER:
+            user_input = input('Press enter to perform this action or abort by typing feedback: ')
+
+            if len(user_input) > 0:
+                agent.memorize(f"{mem}The user responded: {user_input}."\
+                    "Take this comment into consideration.")
+                continue
+
         try:
             if command == "execute_python":
                 _stdout = StringIO()
