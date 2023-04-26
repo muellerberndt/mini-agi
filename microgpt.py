@@ -76,7 +76,7 @@ Below you will be shown a thought and command produced by the agent.
 The command represents a single step that should take the agent further towards its goal.
 Carefully review it to answer the following questions:
 
-Is the agent repeating a step?
+Is the agent repeating a command it has executed before?
 Is the command likely to work in the given environment?
 Are there any syntax errors or logic bugs?
 Is the agent querying the Internet even though it has the necessary knowledge?
@@ -230,11 +230,12 @@ if __name__ == "__main__":
 
             if "CRITICIZE" in critic_response:
                 response = "\n".join(critic_response.split("\n")[1:])
-                print(colored(f"Critic: {response}", "magenta"))
-                agent.memorize(f"{mem}:Please revise your command: {critic_response}.")
-                num_critiques += 1
-                continue
 
+                if len(response) > 0:
+                    print(colored(f"Critic: {response}", "magenta"))
+                    agent.memorize(f"{mem}:Please revise your command: {critic_response}.")
+                    num_critiques += 1
+                    continue
 
         num_critiques = 0
         user_input = input('Press enter to perform this action or abort by typing feedback: ')
