@@ -244,8 +244,6 @@ if __name__ == "__main__":
                         command=command,
                         arg=arg
                     )
-                    
-                print(prompt)
 
                 try:
                     critic_response = agent.predict(prompt)
