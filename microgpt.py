@@ -88,7 +88,7 @@ Ask yourself:
 
 - Does the command achieve significant progress towards the objective?
 - Is there a more efficient plan that achieves the objective?
-- Does the agent unnecesssarily repeat a command (check the context)?
+- Does the agent unnecesssarily repeat a command (check the history)?
 - If the command is execute_python, does the argument contain valid Python code?
 - Does the agent reference non-existent files or URLs?
 - Is the code or cmmand free of syntax errors and logic bugs?
@@ -111,13 +111,15 @@ Example:
 CRITICIZE
 Intendation error in line 2 of the Python code. Fix this error.
 
+OBJECTIVE: {objective}
+
+Command history:
+{history}
+
 Thought to criticize: {thought}
 Command to criticize: 
 {command}
 {arg}
-OBJECTIVE: {objective}
-CONTEXT:
-{context}
 '''
 
 
@@ -160,6 +162,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     num_critiques = 0
+    command_history = []
 
     while True:
         context = agent.remember(f"{objective}, {thought}", limit=5, sort_by_order=True)
@@ -225,19 +228,24 @@ if __name__ == "__main__":
             continue
 
         _arg = arg.replace("\n", "\\n") if len(arg) < 64 else f"{arg[:64]}...".replace("\n", "\\n")
-        print(colored(f"MicroGPT: {thought}\nCmd: {command}, Arg: \"{_arg}\"", "cyan"))
+
+        command_line = f"{thought}\nCmd: {command}, Arg: \"{_arg}\""
+
+        print(colored(f"MicroGPT: {command_line}", "cyan"))
 
         if ENABLE_CRITIC and num_critiques < max_critiques:
 
             with Spinner():
 
                 prompt=CRITIC_PROMPT.format(
-                        context=context,
+                        history="\n".join(command_history),
                         objective=objective,
                         thought=thought,
                         command=command,
                         arg=arg
                     )
+                    
+                print(prompt)
 
                 try:
                     critic_response = agent.predict(prompt)
@@ -301,6 +309,8 @@ if __name__ == "__main__":
             elif command == "done":
                 print("Objective achieved.")
                 sys.exit(0)
+
+            command_history.append(command_line)
         except Exception as e:
             if "context length" in str(e):
                 print(
