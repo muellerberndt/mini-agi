@@ -202,7 +202,7 @@ if __name__ == "__main__":
             command = matches[1][1]
 
             if command == "done":
-                print("Objective achieved.")
+                print(f"Objective achieved: {thought}")
                 sys.exit(0)
 
             # Account for GPT-3.5 sometimes including an extra "done"
