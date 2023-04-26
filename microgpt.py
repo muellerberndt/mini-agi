@@ -72,14 +72,14 @@ with open('hello_world.txt', 'w') as f:
 
 CRITIC_PROMPT = "You are a critic who reviews the actions"\
     f"of an agent running on {operating_system}." + '''
-Below you will be presented with the thought and command produced by the agent.
+Below you will be shown a thought and command produced by the agent.
+The command represents a single step that should take the agent further towards its goal.
+Carefully review it to answer the following questions:
 
-Carefully review the data to answer the following questions:
-
-Is the agent repeating itself?
-Is the command executed likely to work in the given environment?
-Are there any syntax errors or logic errors?
-Is the agent queying the Internet even though it already has the necessary knowledge?
+Is the agent repeating a step?
+Is the command likely to work in the given environment?
+Are there any syntax errors or logic bugs?
+Is the agent querying the Internet even though it has the necessary knowledge?
 Could the task be done more efficiently?
 
 Reponse either with APPROVE if the command seems fine to you, or with CRITICIZE(linebreak)[FEEDBACK] if
