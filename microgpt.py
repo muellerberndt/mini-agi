@@ -61,6 +61,7 @@ Send a separate "done" command *after* the objective was achieved.
 RESPOND WITH PRECISELY ONE THOUGHT/COMMAND/ARG COMBINATION.
 DO NOT CHAIN MULTIPLE COMMANDS.
 DO NOT INCLUDE EXTRA TEXT BEFORE OR AFTER THE COMMAND.
+DO NOT REPEAT PREVIOUSLY EXECUTED COMMANDS.
 
 Examples:
 
@@ -202,7 +203,7 @@ if __name__ == "__main__":
             command = matches[1][1]
 
             if command == "done":
-                print(f"Objective achieved: {thought}")
+                print(colored(f"The agent concluded: {thought}", "cyan"))
                 sys.exit(0)
 
             # Account for GPT-3.5 sometimes including an extra "done"
@@ -232,6 +233,11 @@ if __name__ == "__main__":
         command_line = f"{thought}\nCmd: {command}, Arg: \"{_arg}\""
 
         print(colored(f"MicroGPT: {command_line}", "cyan"))
+
+        if command_line in command_history:
+            print("The agent repeated a previous command. Retrying...")
+            agent.memorize(f"{mem}You repeated a previous command. Try a different command.")
+            continue
 
         if ENABLE_CRITIC and num_critiques < max_critiques:
 
