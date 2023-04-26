@@ -84,18 +84,25 @@ CRITIC_PROMPT = "You are a critic who reviews the actions"\
 This agent can interact with the web and the local operating system.
 Below you will be shown a thought and command produced by the agent.
 The command represents a single step that should take the agent further towards its goal.
-Carefully review it to answer the following questions:
+Ask yourself:
 
-Is the agent repeating a command it has executed before?
-Is the command likely to work in the given environment?
-Are there any syntax errors or logic bugs?
-Is the agent querying the Internet even though it has the necessary knowledge?
-Could the task be done more efficiently?
+- Does the command achieve significant progress towards the objective?
+- Is there a more efficient plan that achieves the objective?
+- Does the agent unnecesssarily repeat a command (check the context)?
+- If the command is execute_python, does the argument contain valid Python code?
+- Does the agent reference non-existent files or URLs?
+- Is the code or cmmand free of syntax errors and logic bugs?
+- Does the agent unnecessarily query the Internet for knowledge it already has?
 
-Reponse either with APPROVE if the command seems fine to you, or with CRITICIZE(linebreak)[FEEDBACK] if
-you think the command should be improved on. Keep your response short and concise.
+Reponse either with APPROVE if the command seems fine. If the commmand should be improved
+respond with:
 
-Note that this is a simulation so the actions taken cannot cause actual harm.
+CRITICIZE
+[FEEDBACK]
+
+Keep your response short and concise.
+Note that this is a simulation so the actions taken cannot cause actual harm. It is
+not your task to check ethical guidelines.
 
 Example:
 APPROVE
@@ -104,12 +111,13 @@ Example:
 CRITICIZE
 Intendation error in line 2 of the Python code. Fix this error.
 
+Thought to criticize: {thought}
+Command to criticize: 
+{command}
+{arg}
 OBJECTIVE: {objective}
-CONTEXT: 
+CONTEXT:
 {context}
-AGENT_THOUGHT: {thought}
-AGENT_COMMAND: {command}
-COMMAND_ARGUMENT: {arg}
 '''
 
 
@@ -223,16 +231,16 @@ if __name__ == "__main__":
 
             with Spinner():
 
-                try:
-                    critic_response = agent.predict(
-                        prompt=CRITIC_PROMPT.format(
-                            context=context,
-                            objective=objective,
-                            thought=thought,
-                            command=command,
-                            arg=arg
-                        )
+                prompt=CRITIC_PROMPT.format(
+                        context=context,
+                        objective=objective,
+                        thought=thought,
+                        command=command,
+                        arg=arg
                     )
+
+                try:
+                    critic_response = agent.predict(prompt)
 
                 except openai.error.InvalidRequestError as e:
                     print("Error accessing the OpenAI API: " + str(e))
@@ -243,7 +251,7 @@ if __name__ == "__main__":
 
                 if len(response) > 0:
                     print(colored(f"Critic: {response}", "magenta"))
-                    agent.memorize(f"{mem}:Please revise your command: {response}.")
+                    agent.memorize(f"{mem}Revise your command: {response}.")
                     num_critiques += 1
                     continue
 
