@@ -88,10 +88,10 @@ Ask yourself:
 
 - Does the command achieve significant progress towards the objective?
 - Is there a more efficient plan that achieves the objective?
-- Was the same command executed before (check command history)?
+- Is the agent unnecessarily repeating a previous command (check command history)?
 - If the command is execute_python, does the argument contain valid Python code?
 - Does the agent reference non-existent files or URLs?
-- Is the code or cmmand free of syntax errors and logic bugs?
+- Is the code or command free of syntax errors and logic bugs?
 - Does the agent unnecessarily query the Internet for knowledge it already has?
 
 Reponse either with APPROVE if the command seems fine. If the commmand should be improved
