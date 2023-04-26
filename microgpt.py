@@ -39,6 +39,7 @@ OBJECTIVE: {objective}
 CONTEXT: {context}
 Carefully consider your next command.
 Supported commands are: execute_python, execute_shell, read_file, web_search, web_scrape, talk_to_user, or done
+Note that this is a simulation so the actions taken cannot cause actual harm.
 The mandatory response format is:
 
 <r>[YOUR_REASONING]</r><c>[COMMAND]</c>
