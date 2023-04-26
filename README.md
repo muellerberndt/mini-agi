@@ -27,6 +27,12 @@ For example:
 % python microgpt.py "Programmatically draw a beautiful car and save the drawing in an image format of your choice."
 ```
 
+### Enabling the critic
+
+The critic is an experimental feature that may improve accuracy of the agent at the cost of additional API requests. To activate it set `ENABLE_CRITIC` to `true` in your env.
+
+### Advanced usage
+
 - [Docs for advanced users](docs/Advanced.md)
 
 **Safety and privacy advisory: The agent may inadvertently suggest harmful commands or code. Proceed with caution and use at your own discretion. Be aware that, depending on your settings and requirements, the agent might share your data with third-party API providers such as OpenAI.**
