@@ -81,6 +81,7 @@ with open('hello_world.txt', 'w') as f:
 
 CRITIC_PROMPT = "You are a critic who reviews the actions"\
     f"of an agent running on {operating_system}." + '''
+This agent can interact with the web and the local operating system.
 Below you will be shown a thought and command produced by the agent.
 The command represents a single step that should take the agent further towards its goal.
 Carefully review it to answer the following questions:
@@ -242,7 +243,7 @@ if __name__ == "__main__":
 
                 if len(response) > 0:
                     print(colored(f"Critic: {response}", "magenta"))
-                    agent.memorize(f"{mem}:Please revise your command: {critic_response}.")
+                    agent.memorize(f"{mem}:Please revise your command: {response}.")
                     num_critiques += 1
                     continue
 
