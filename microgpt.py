@@ -163,9 +163,11 @@ if __name__ == "__main__":
         sys.exit(0)
 
     num_critiques = 0
+    command_id = 0
     command_history = []
 
     while True:
+        command_id += 1
         context = agent.remember(f"{objective}, {thought}", limit=5, sort_by_order=True)
         context = agent.chunked_summarize(
             "\n".join(context),
@@ -194,8 +196,9 @@ if __name__ == "__main__":
         if DEBUG:
             print(f"RAW RESPONSE:\n{response_text}")
 
+        res_lines = response_text.split("\n")
+
         try:
-            res_lines = response_text.split("\n")
             PATTERN = r'<(r|c)>(.*?)</(r|c)>'
             matches = re.findall(PATTERN, res_lines[0])
 
@@ -214,12 +217,14 @@ if __name__ == "__main__":
 
             # Remove unwanted code formatting backticks
             arg = arg.replace("```", "")
-
-            mem = f"Your thought: {thought}\nYour command: {command}"\
-                f"\nCmd argument:\n{arg}\nResult:\n"
+            
+            mem = f"\Previous command #{command_id}:\nThought: {thought}\nCmd: {command}"\
+                f"\nArg:\n{arg}\nResult:\n"
 
         except Exception as e:
             print(colored("Unable to parse response. Retrying...\n", "red"))
+            agent.memorize(f"\nPrevious command #{command_id}:\n{res_lines[0]}\nWas formatted incorrectly."\
+                " Use the correct syntax using the <r> and <c> tags.")
             continue
 
         if command == "talk_to_user":
