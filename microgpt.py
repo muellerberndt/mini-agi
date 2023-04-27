@@ -217,14 +217,14 @@ if __name__ == "__main__":
 
             # Remove unwanted code formatting backticks
             arg = arg.replace("```", "")
-            
+
             mem = f"\nPrevious command #{command_id}:\nThought: {thought}\nCmd: {command}"\
                 f"\nArg:\n{arg}\nResult:\n"
 
         except Exception as e:
             print(colored("Unable to parse response. Retrying...\n", "red"))
-            agent.memorize(f"\nPrevious command #{command_id}:\n{res_lines[0]}\nWas formatted incorrectly."\
-                " Use the correct syntax using the <r> and <c> tags.")
+            agent.memorize(f"\nPrevious command #{command_id}:\n{res_lines[0]}\nWas formatted"\
+                " incorrectly. Use the correct syntax using the <r> and <c> tags.")
             continue
 
         if command == "talk_to_user":
@@ -290,7 +290,13 @@ if __name__ == "__main__":
                 agent.memorize(f"{mem}{_stdout.getvalue()}")
             elif command == "execute_shell":
                 result = subprocess.run(arg, capture_output=True, shell=True, check=False)
-                agent.memorize(f"{mem}STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}")
+
+                stdout = result.stdout.decode("utf-8")
+                stderr = result.stderr.decode("utf-8")
+
+                if len(stderr) > 0:
+                    print(colored(f"Execution error: {stderr}", "red"))
+                agent.memorize(f"{mem}STDOUT:\n{stdout}\nSTDERR:\n{stderr}")
             elif command == "web_search":
                 agent.memorize(f"{mem}{ddg(arg, max_results=5)}")
             elif command == "web_scrape":
@@ -322,9 +328,13 @@ if __name__ == "__main__":
             command_history.append(command_line)
         except Exception as e:
             if "context length" in str(e):
-                print(
-                    f"{str(e)}\nTry decreasing MAX_CONTEXT_SIZE, MAX_MEMORY_ITEM_SIZE" \
-                    " and SUMMARIZER_CHUNK_SIZE."
+                print(colored(
+                        f"{str(e)}\nTry decreasing MAX_CONTEXT_SIZE, MAX_MEMORY_ITEM_SIZE" \
+                            " and SUMMARIZER_CHUNK_SIZE.",
+                        "red"
+                    )
                 )
+
+            print(colored(f"Execution error: {str(e)}", "red"))
             agent.memorize(f"{mem}The command returned an error:\n{str(e)}\n"\
                 "You should fix the command or code.")
