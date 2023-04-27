@@ -218,7 +218,7 @@ if __name__ == "__main__":
             # Remove unwanted code formatting backticks
             arg = arg.replace("```", "")
             
-            mem = f"\Previous command #{command_id}:\nThought: {thought}\nCmd: {command}"\
+            mem = f"\nPrevious command #{command_id}:\nThought: {thought}\nCmd: {command}"\
                 f"\nArg:\n{arg}\nResult:\n"
 
         except Exception as e:
