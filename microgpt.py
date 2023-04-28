@@ -45,11 +45,15 @@ PROMPT_USER = get_bool("PROMPT_USER")
 
 PROMPT = f"You are an autonomous agent running on {operating_system}." + '''
 OBJECTIVE: {objective}
-CONTEXT: {context}
-Carefully consider your next command.
+
+You are working towards the objective on a step-by-step basis. Previous steps:
+
+{context}
+
+Your task is to respond with the next command.
 Supported commands are: execute_python, execute_shell, read_file, web_search, web_scrape, talk_to_user, or done
 Note that this is a simulation so the actions taken cannot cause actual harm.
-The mandatory response format is:
+The mandatory command format is:
 
 <r>[YOUR_REASONING]</r><c>[COMMAND]</c>
 [ARGUMENT]
@@ -57,13 +61,13 @@ The mandatory response format is:
 ARGUMENT may have multiple lines if the argument is Python code.
 Use only non-interactive shell commands.
 Python code run with execute_python must end with an output "print" statement.
-Send a separate "done" command *after* the objective was achieved.
+Send the "done" command if the objective was achieved in a previous command.
 RESPOND WITH PRECISELY ONE THOUGHT/COMMAND/ARG COMBINATION.
 DO NOT CHAIN MULTIPLE COMMANDS.
 DO NOT INCLUDE EXTRA TEXT BEFORE OR AFTER THE COMMAND.
 DO NOT REPEAT PREVIOUSLY EXECUTED COMMANDS.
 
-Examples:
+Example commands:
 
 <r>Search for websites relevant to salami pizza.</r><c>web_search</c>
 salami pizza
@@ -87,15 +91,15 @@ Below you will be shown a thought and command produced by the agent.
 The command represents a single step that should take the agent further towards its goal.
 Ask yourself:
 
-- Does the command achieve significant progress towards the objective?
-- Is there a more efficient plan that achieves the objective?
-- Is the agent unnecessarily repeating a previous command (check command history)?
+- Does the command achieve progress towards the objective?
+- Is there a more efficient way to achieve the objective?
+- Is the agent unnecessarily repeating a previous command?
 - If the command is execute_python, does the argument contain valid Python code?
 - Does the agent reference non-existent files or URLs?
-- Is the code or command free of syntax errors and logic bugs?
+- Is the command free of syntax errors and logic bugs?
 - Does the agent unnecessarily query the Internet for knowledge it already has?
 
-Reponse either with APPROVE if the command seems fine. If the commmand should be improved
+Reponse with APPROVE if the command seems fine. If the commmand should be improved
 respond with:
 
 CRITICIZE
@@ -114,7 +118,7 @@ Intendation error in line 2 of the Python code. Fix this error.
 
 OBJECTIVE: {objective}
 
-Command history:
+Previous commands:
 {history}
 
 Thought to criticize: {thought}
