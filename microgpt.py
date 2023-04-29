@@ -323,7 +323,7 @@ if __name__ == "__main__":
                     file_content = agent.chunked_summarize(
                         f.read(), max_memory_item_size,
                         instruction_hint=SUMMARY_HINT +
-                            EXTRA_SUMMARY_HINT.format(objective=objective))
+                            EXTRA_SUMMARY_HINT.format(summarizer_hint=objective))
                 agent.memorize(f"{mem}{file_content}")
             elif command == "done":
                 print("Objective achieved.")
