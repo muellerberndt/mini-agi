@@ -25,6 +25,9 @@ import openai
 from duckduckgo_search import ddg
 from thinkgpt.llm import ThinkGPT
 from spinner import Spinner
+from utils import get_prompt, clean_text, templates, chunk_text, FLAG, docsearch
+from langchain.chains.question_answering import load_qa_chain
+from langchain.llms import OpenAI
 
 
 operating_system = platform.platform()
@@ -151,6 +154,18 @@ if __name__ == "__main__":
     max_critiques = int(os.getenv("MAX_CRITIQUES"))
     context = objective
     thought = "You awakened moments ago."
+
+    retriever=docsearch.as_retriever()
+    docs = retriever.get_relevant_documents(context)
+    chain = load_qa_chain(OpenAI(), chain_type="stuff", prompt=get_prompt())
+    ans = chain.run(input_documents=docs, question=context)
+    temp = clean_text(ans)
+    
+    if temp != FLAG:
+        print(ans)
+        # print(docs[0].page_content)
+        sys.exit(0)
+    print(ans)
 
     work_dir = os.getenv("WORK_DIR")
 
