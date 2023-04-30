@@ -9,10 +9,10 @@ Create the file `.vscode/launch.json` with the following content:
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Micro GPT",
+            "name": "Python: MiniAGI",
             "type": "python",
             "request": "launch",
-            "program": "${cwd}/microgpt.py",
+            "program": "${cwd}/miniagi.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": ["test query"],

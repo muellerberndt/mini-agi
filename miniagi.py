@@ -1,6 +1,6 @@
 """
-MicroGPT main executable.
-This script serves as the main entry point for the MicroGPT application. It provides a command-line
+MiniAGI main executable.
+This script serves as the main entry point for the MiniAGI application. It provides a command-line
 interface for users to interact with a GPT-3.5/4 language model, leveraging memory management and
 context-based reasoning to achieve user-defined objectives. The agent can issue various types of
 commands, such as executing Python code, running shell commands, reading files, searching the web,
@@ -143,7 +143,7 @@ if __name__ == "__main__":
         )
 
     if len(sys.argv) != 2:
-        print("Usage: microgpt.py <objective>")
+        print("Usage: miniagi.py <objective>")
         sys.exit(0)
 
     objective = sys.argv[1]
@@ -155,7 +155,7 @@ if __name__ == "__main__":
     work_dir = os.getenv("WORK_DIR")
 
     if work_dir is None or not work_dir:
-        work_dir = os.path.join(Path.home(), "microgpt")
+        work_dir = os.path.join(Path.home(), "miniagi")
         if not os.path.exists(work_dir):
             os.makedirs(work_dir)
 
@@ -233,7 +233,7 @@ if __name__ == "__main__":
             continue
 
         if command == "talk_to_user":
-            print(colored(f"MicroGPT: {arg}", 'cyan'))
+            print(colored(f"MiniAGI: {arg}", 'cyan'))
             user_input = input('Your response: ')
             agent.memorize(f"{mem}The user responded with: {user_input}.")
             continue
@@ -242,7 +242,7 @@ if __name__ == "__main__":
 
         command_line = f"{thought}\nCmd: {command}, Arg: \"{_arg}\""
 
-        print(colored(f"MicroGPT: {command_line}", "cyan"))
+        print(colored(f"MiniAGI: {command_line}", "cyan"))
 
         if command_line in command_history:
             print("The agent repeated a previous command. Retrying...")
