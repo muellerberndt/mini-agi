@@ -165,7 +165,6 @@ if __name__ == "__main__":
         print(ans)
         # print(docs[0].page_content)
         sys.exit(0)
-    print(ans)
 
     work_dir = os.getenv("WORK_DIR")
 
