@@ -142,6 +142,12 @@ if __name__ == "__main__":
         verbose=False
         )
 
+    summarizer = ThinkGPT(
+        model_name=os.getenv("SUMMARIZER_MODEL"),
+        request_timeout=600,
+        verbose=False
+        )
+
     if len(sys.argv) != 2:
         print("Usage: miniagi.py <objective>")
         sys.exit(0)
@@ -311,23 +317,25 @@ if __name__ == "__main__":
                 with urlopen(arg) as response:
                     html = response.read()
 
-                response_text = agent.chunked_summarize(
-                    content=BeautifulSoup(
-                        html,
-                        features="lxml"
-                    ).get_text(),
-                    max_tokens=max_memory_item_size,
-                    instruction_hint=SUMMARY_HINT +
-                        EXTRA_SUMMARY_HINT.format(summarizer_hint=objective)
-                )
+                with Spinner():
+                    response_text = summarizer.chunked_summarize(
+                        content=BeautifulSoup(
+                            html,
+                            features="lxml"
+                        ).get_text(),
+                        max_tokens=max_memory_item_size,
+                        instruction_hint=SUMMARY_HINT +
+                            EXTRA_SUMMARY_HINT.format(summarizer_hint=objective)
+                    )
 
                 agent.memorize(f"{mem}{response_text}")
             elif command == "read_file":
-                with open(arg, "r") as f:
-                    file_content = agent.chunked_summarize(
-                        f.read(), max_memory_item_size,
-                        instruction_hint=SUMMARY_HINT +
-                            EXTRA_SUMMARY_HINT.format(summarizer_hint=objective))
+                with Spinner():
+                    with open(arg, "r") as f:
+                        file_content = summarizer.chunked_summarize(
+                            f.read(), max_memory_item_size,
+                            instruction_hint=SUMMARY_HINT +
+                                EXTRA_SUMMARY_HINT.format(summarizer_hint=objective))
                 agent.memorize(f"{mem}{file_content}")
             elif command == "done":
                 print("Objective achieved.")
