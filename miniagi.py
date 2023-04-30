@@ -147,6 +147,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     objective = sys.argv[1]
+    max_context_size = int(os.getenv("MAX_CONTEXT_SIZE"))
     max_memory_item_size = int(os.getenv("MAX_MEMORY_ITEM_SIZE"))
     max_critiques = int(os.getenv("MAX_CRITIQUES"))
     context = objective
@@ -173,11 +174,13 @@ if __name__ == "__main__":
 
     while True:
         command_id += 1
-        context = agent.remember(f"{objective}, {thought}", limit=5, sort_by_order=True)
-        context = agent.chunked_summarize(
-            "\n".join(context),
-            max_tokens=int(os.getenv("MAX_CONTEXT_SIZE")),
-            instruction_hint=SUMMARY_HINT
+        context = "\n".join(
+                agent.remember(
+                f"{objective}, {thought}",
+                limit=32,
+                sort_by_order=True,
+                max_tokens=max_context_size
+            )
         )
 
         if DEBUG:
