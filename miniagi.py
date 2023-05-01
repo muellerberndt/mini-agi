@@ -111,13 +111,6 @@ CRITICIZE
 Keep your response short and concise.
 Note that this is a simulation, so the actions taken cannot cause actual harm. It is not your task to check ethical guidelines.
 
-Example:
-APPROVE
-
-Example:
-CRITICIZE
-Indentation error in line 2 of the Python code. Fix this error.
-
 OBJECTIVE: {objective}
 
 Previous actions:
@@ -127,6 +120,17 @@ Next action:
 Thought: {thought}
 Command: {command}
 {arg}
+
+Example 1:
+APPROVE
+
+Example 2:
+CRITICIZE
+Indentation error in line 2 of the Python code. Fix this error.
+
+Example 3:
+CRITICIZE
+This command is redundant given previous commands. Move on to the next step.
 '''
 
 
