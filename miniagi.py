@@ -44,35 +44,64 @@ ENABLE_CRITIC = get_bool("ENABLE_CRITIC")
 PROMPT_USER = get_bool("PROMPT_USER")
 
 
-CREATE_PLAN_PROMPT = f"You are the planner of an autonomous agent running on {operating_system}." + '''
-The agent has the objective: {objective}
-The agent has native web search and scraping capabilities. It can execute local shell commands and Python code.
+PLANNER_PROMPT = f"You are the planner of an agent running on {operating_system}." + '''
+Agent objective: {objective}
+The agent is controlled by {model}
+Agent capabilites
 
-Create an optimal step-by-step-plan to achieve the objective in the form of a short and concise bullet list.
+- Execute Python code
+- Execute shell command
+- Read file
+- Search web
+- Scrape URL
+- Ask user
+
+Create a numbered list consisting of short English sentences.
+Write sentences of minimum length.
+Plain English only, no commands.
+Make the plan as simple as possible.
+Use as few items as possible.
+Consider the limitations of the agent:
+
+- {model} memory limited to 4000 tokens
+
+Whenever possible, use existing knowledge of {model} rather than accessing the Internet.
+
 '''
 
-
-PROMPT = f"You are an autonomous agent running on {operating_system}." + '''
+AGENT_PROMPT = f"You are an autonomous agent running on {operating_system}." + '''
 OBJECTIVE: {objective} (e.g. "Find a recipe for chocolate chip cookies")
 
-Action plan:
+Follow this action plan:
 
 {action_plan}
 
+Previous actions:
+
 {context}
 
-Your task is to respond with the next action.
-Supported commands are: execute_python, execute_shell, read_file, web_search, web_scrape, talk_to_user, or done
-The mandatory action format is:
+Respond with the next action according to the plan above.
+Supported commands:
+- execute_python
+- execute_shell
+- read_file
+- web_search
+- web_scrape
+- talk_to_user
+- revise_plan
+- done
+The mandatory format is:
 
 <r>[YOUR_REASONING]</r><c>[COMMAND]</c>
 [ARGUMENT]
 
 ARGUMENT may have multiple lines if the argument is Python code.
 Use only non-interactive shell commands.
-web_scrape argument must be a single URL.
-Python code run with execute_python must end with an output "print" statement and should be well-commented.
-Send the "done" command if the objective was achieved in a previous command or if no further action is required.
+web_scrape argument is a single URL.
+Python code run with execute_python must end with an output "print" statement.
+Send "done" command if no further action is required.
+Send "revise_plan" command followed by a new action plan if the
+current action plan needs to be updated.
 RESPOND WITH PRECISELY ONE THOUGHT/COMMAND/ARG COMBINATION.
 DO NOT CHAIN MULTIPLE COMMANDS.
 DO NOT INCLUDE EXTRA TEXT BEFORE OR AFTER THE COMMAND.
@@ -89,6 +118,10 @@ https://example.com/chocolate-chip-cookies
 <r>I need to ask the user for guidance.</r><c>talk_to_user</c>
 What is the URL of a website with chocolate chip cookies recipes?
 
+<r>I need to revise the action plan because I cannot bake cookies</r><c>revise_plan</c>
+1. Use web search to identify cookie recipes
+2. Ask the user to bake cookies
+
 <r>Write 'Hello, world!' to file</r><c>execute_python</c>
 # Opening file in write mode and writing 'Hello, world!' into it
 with open('hello_world.txt', 'w') as f:
@@ -98,31 +131,36 @@ with open('hello_world.txt', 'w') as f:
 '''
 
 CRITIC_PROMPT = "You are a critic who reviews the actions" \
-    f"of an agent running on {operating_system}." + '''
-This agent can interact with the web and the local operating system.
-The action is supposed to achieve progress towards the objective.
-Each action consists of a thought and a command.
+    f" of an agent running on {operating_system}." + '''
+Agent is controlled by {model}.
+Agent can interact with the web and the local operating system.
+Each action consists of 1 thought and 1 command.
 
-Ask yourself:
+Review the action according to the criteria:
 
-- Does the action achieve progress towards the objective?
-- Given previous actions, should the agent proceed to the next step?
-- Is the agent unnecessarily repeating a previous action?
-- Is the thought clear and logical?
-- Is there a more efficient way to work towards the objective?
-- Does the action reference non-existent files or URLs?
-- Is the command free of syntax errors and logic bugs?
-- Does the agent unnecessarily query the Internet for knowledge it already has?
+The action should achieve progress towards the objective.
+The agent should not perform redundant actions.
+The agent should use non-interactive shell commands only.
+The thought should be clear and logical.
+The action should be effective in a real-world environment.
+The action should reference only existent files and URLs.
+The command and/or code should be free of syntax errors and logic bugs.
+The agent should make use of the knowledge of its LLM.
+The agent should not unnecessarily access the Internet.
 
-Respond with APPROVE if the command seems fine. If the command should be improved, respond with:
+Respond with APPROVE if the action seems fine. If the action should be improved, respond with:
 
 CRITICIZE
 [FEEDBACK]
 
 Keep your response short and concise.
-Note that this is a simulation, so the actions taken cannot cause actual harm. It is not your task to check ethical guidelines.
+Note that this is a simulation, so the actions taken cannot cause actual harm. It is not your task to apply ethical guidelines.
 
 OBJECTIVE: {objective}
+
+The agent's action plan is:
+
+{action_plan}
 
 Previous actions:
 {history}
@@ -145,9 +183,9 @@ APPROVE
 '''
 
 
-SUMMARY_HINT = "Do your best to retain all semantic information including tasks performed"\
+SUMMARY_HINT = "Attempt to retain all semantic information including tasks performed"\
     "by the agent, website content, important data points and hyper-links.\n"
-EXTRA_SUMMARY_HINT = "If the text contains information related to the topic: '{summarizer_hint}'"\
+EXTRA_SUMMARY_HINT = "If the text contains information related to: '{summarizer_hint}'"\
     "then include it. If not, write a standard summary."
 
 if __name__ == "__main__":
@@ -174,19 +212,6 @@ if __name__ == "__main__":
     max_critiques = int(os.getenv("MAX_CRITIQUES"))
     context = objective
 
-    with Spinner():
-        try:
-            action_plan = agent.predict(
-                prompt=CREATE_PLAN_PROMPT.format(objective=objective)
-            )
-        except openai.error.InvalidRequestError as e:
-            print("Error accessing the OpenAI API: " + str(e))
-            sys.exit(0)
-
-    print(colored(f"Action plan:\n{action_plan}", "cyan"))
-
-    thought = "You awakened moments ago."
-
     work_dir = os.getenv("WORK_DIR")
 
     if work_dir is None or not work_dir:
@@ -195,6 +220,19 @@ if __name__ == "__main__":
             os.makedirs(work_dir)
 
     print(f"Working directory is {work_dir}")
+
+    with Spinner():
+        try:
+            _prompt = PLANNER_PROMPT.format(objective=objective, model=agent.model_name)
+
+            action_plan = agent.predict(
+                prompt=_prompt
+            )
+        except openai.error.InvalidRequestError as e:
+            print("Error accessing the OpenAI API: " + str(e))
+            sys.exit(0)
+
+    print(colored(f"Action plan:\n{action_plan}", "cyan"))
 
     try:
         os.chdir(work_dir)
@@ -205,6 +243,7 @@ if __name__ == "__main__":
     num_critiques = 0
     command_id = 0
     command_history = []
+    thought = ""
 
     while True:
         command_id += 1
@@ -217,32 +256,28 @@ if __name__ == "__main__":
             )
         )
 
-        if DEBUG:
-            print(f"CONTEXT:\n{context}")
-
         with Spinner():
 
             try:
-                _prompt = PROMPT.format(
+                _prompt = AGENT_PROMPT.format(
                     context=context,
                     action_plan=action_plan,
                     objective=objective
                 )
+
+                if DEBUG:
+                    print(f"AGENT PROMPT:\n\n{_prompt}")
 
                 response_text = agent.predict(
                     prompt=_prompt
                 )
 
             except openai.error.InvalidRequestError as e:
-                if 'gpt-4' in str(e):
-                    print("Prompting the gpt-4 model failed. Falling back to gpt-3.5-turbo")
-                    agent = ThinkGPT(model_name='gpt-3.5-turbo', verbose=False)
-                    continue
                 print("Error accessing the OpenAI API: " + str(e))
                 sys.exit(0)
 
         if DEBUG:
-            print(f"RAW RESPONSE:\n{response_text}")
+            print(f"AGENT RESPONSE:\n\n{response_text}")
 
         res_lines = response_text.split("\n")
 
@@ -271,8 +306,8 @@ if __name__ == "__main__":
 
         except Exception as e:
             print(colored("Unable to parse response. Retrying...\n", "red"))
-            agent.memorize(f"\nPrevious command #{command_id}:\n{res_lines[0]}\nWas formatted"\
-                " incorrectly. Use the correct syntax using the <r> and <c> tags.")
+            agent.memorize(f"\nPrevious command #{command_id}:\n{res_lines[0]}\n"\
+                "Incorrect format. Use the correct syntax using the <r> and <c> tags.")
             continue
 
         if command == "talk_to_user":
@@ -296,16 +331,21 @@ if __name__ == "__main__":
 
             with Spinner():
 
-                prompt=CRITIC_PROMPT.format(
+                _prompt=CRITIC_PROMPT.format(
+                        model=agent.model_name,
                         history="\n".join(command_history),
                         objective=objective,
+                        action_plan=action_plan,
                         thought=thought,
                         command=command,
                         arg=arg
                     )
 
+                if DEBUG:
+                    print(f"CRITIC PROMPT:\n\n{_prompt}")
+
                 try:
-                    critic_response = agent.predict(prompt)
+                    critic_response = agent.predict(_prompt)
 
                 except openai.error.InvalidRequestError as e:
                     print("Error accessing the OpenAI API: " + str(e))
@@ -326,7 +366,7 @@ if __name__ == "__main__":
             user_input = input('Press enter to perform this action or abort by typing feedback: ')
 
             if len(user_input) > 0:
-                agent.memorize(f"{mem}The user responded: {user_input}."\
+                agent.memorize(f"{mem}User responded: {user_input}."\
                     "Take this comment into consideration.")
                 continue
 
@@ -343,7 +383,7 @@ if __name__ == "__main__":
                 stderr = result.stderr.decode("utf-8")
 
                 if len(stderr) > 0:
-                    print(colored(f"Execution error: {stderr}", "red"))
+                    print(colored(f"Stderr: {stderr}", "red"))
                 agent.memorize(f"{mem}STDOUT:\n{stdout}\nSTDERR:\n{stderr}")
             elif command == "web_search":
                 agent.memorize(f"{mem}{ddg(arg, max_results=5)}")
@@ -371,6 +411,9 @@ if __name__ == "__main__":
                             instruction_hint=SUMMARY_HINT +
                                 EXTRA_SUMMARY_HINT.format(summarizer_hint=objective))
                 agent.memorize(f"{mem}{file_content}")
+            elif command == "revise_plan":
+                action_plan = arg
+                print(colored(f"Revised plan:\n{action_plan}", "cyan"))
             elif command == "done":
                 print("Objective achieved.")
                 sys.exit(0)
