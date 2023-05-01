@@ -51,7 +51,8 @@ You are working towards the objective on a step-by-step basis. Previous steps:
 {context}
 
 Your task is to respond with the next action.
-Supported commands are: execute_python, execute_shell, read_file, web_search, web_scrape, talk_to_user, or done
+Supported commands are: execute_python, execute_shell, read_file, web_search, web_scrape, talk_to_user,
+spawn_agent, or done
 The mandatory action format is:
 
 <r>[YOUR_REASONING]</r><c>[COMMAND]</c>
@@ -62,6 +63,8 @@ Use only non-interactive shell commands.
 web_scrape argument must be a single URL.
 Python code run with execute_python must end with an output "print" statement and should be well-commented.
 Send the "done" command if the objective was achieved in a previous command or if no further action is required.
+If a task is complex and requires multiple steps, delegate it to a subagent with spawn_agent.
+When spawning an agent with spawn_agent, pass the objective as the argument.
 RESPOND WITH PRECISELY ONE THOUGHT/COMMAND/ARG COMBINATION.
 DO NOT CHAIN MULTIPLE COMMANDS.
 DO NOT INCLUDE EXTRA TEXT BEFORE OR AFTER THE COMMAND.
@@ -77,6 +80,9 @@ https://example.com/chocolate-chip-cookies
 
 <r>I need to ask the user for guidance.</r><c>talk_to_user</c>
 What is the URL of a website with chocolate chip cookies recipes?
+
+<r>I will spawn a new agent that performs research.</r><c>spawn_agent</c>
+Perform research about chocolate cookie recipes
 
 <r>Write 'Hello, world!' to file</r><c>execute_python</c>
 # Opening file in write mode and writing 'Hello, world!' into it
@@ -139,49 +145,16 @@ SUMMARY_HINT = "Do your best to retain all semantic information including tasks 
 EXTRA_SUMMARY_HINT = "If the text contains information related to the topic: '{summarizer_hint}'"\
     "then include it. If not, write a standard summary."
 
-if __name__ == "__main__":
 
-    agent = ThinkGPT(
-        model_name=os.getenv("MODEL"),
-        request_timeout=600,
-        verbose=False
-        )
+def run_agent(agent: ThinkGPT, summarizer: ThinkGPT, objective: str) -> str:
 
-    summarizer = ThinkGPT(
-        model_name=os.getenv("SUMMARIZER_MODEL"),
-        request_timeout=600,
-        verbose=False
-        )
-
-    if len(sys.argv) != 2:
-        print("Usage: miniagi.py <objective>")
-        sys.exit(0)
-
-    objective = sys.argv[1]
-    max_context_size = int(os.getenv("MAX_CONTEXT_SIZE"))
-    max_memory_item_size = int(os.getenv("MAX_MEMORY_ITEM_SIZE"))
-    max_critiques = int(os.getenv("MAX_CRITIQUES"))
-    context = objective
-    thought = "You awakened moments ago."
-
-    work_dir = os.getenv("WORK_DIR")
-
-    if work_dir is None or not work_dir:
-        work_dir = os.path.join(Path.home(), "miniagi")
-        if not os.path.exists(work_dir):
-            os.makedirs(work_dir)
-
-    print(f"Working directory is {work_dir}")
-
-    try:
-        os.chdir(work_dir)
-    except FileNotFoundError:
-        print("Directory doesn't exist. Set WORK_DIR to an existing directory or leave it blank.")
-        sys.exit(0)
+    print(colored(f"New agent spawned, objective: {objective}", "cyan"))
 
     num_critiques = 0
     command_id = 0
     command_history = []
+    context = objective
+    thought = ""
 
     while True:
         command_id += 1
@@ -230,7 +203,7 @@ if __name__ == "__main__":
 
             # Account for GPT-3.5 sometimes including an extra "done"
             if "done" in res_lines[-1]:
-                res_line = res_lines[:-1]
+                res_lines = res_lines[:-1]
 
             arg = "\n".join(res_lines[1:])
 
@@ -241,7 +214,7 @@ if __name__ == "__main__":
                 f"\nArg:\n{arg}\nResult:\n"
 
         except Exception as e:
-            print(colored("Unable to parse response. Retrying...\n", "red"))
+            print(colored(f"Unable to parse response: {e} Retrying...\n", "red"))
             agent.memorize(f"\nPrevious command #{command_id}:\n{res_lines[0]}\nWas formatted"\
                 " incorrectly. Use the correct syntax using the <r> and <c> tags.")
             continue
@@ -342,9 +315,12 @@ if __name__ == "__main__":
                             instruction_hint=SUMMARY_HINT +
                                 EXTRA_SUMMARY_HINT.format(summarizer_hint=objective))
                 agent.memorize(f"{mem}{file_content}")
+            elif command == "spawn_agent":
+                result = run_agent(agent, summarizer, arg)
+                agent.memorize(f"{mem}Actions performed by the agent:\n{result}")
             elif command == "done":
                 print("Objective achieved.")
-                sys.exit(0)
+                break
 
             command_history.append(command_line)
         except Exception as e:
@@ -359,3 +335,52 @@ if __name__ == "__main__":
             print(colored(f"Execution error: {str(e)}", "red"))
             agent.memorize(f"{mem}The command returned an error:\n{str(e)}\n"\
                 "You should fix the command or code.")
+
+    _result = summarizer.chunked_summarize(
+        context,
+        max_tokens=max_memory_item_size,
+        instruction_hint="Summarize the agent's actions and results."
+    )
+    print("Subagent returned:\n" + _result)
+    return _result
+
+if __name__ == "__main__":
+
+    _agent = ThinkGPT(
+        model_name=os.getenv("MODEL"),
+        request_timeout=600,
+        verbose=False
+        )
+
+    _summarizer = ThinkGPT(
+        model_name=os.getenv("SUMMARIZER_MODEL"),
+        request_timeout=600,
+        verbose=False
+        )
+
+    if len(sys.argv) != 2:
+        print("Usage: miniagi.py <objective>")
+        sys.exit(0)
+
+    max_context_size = int(os.getenv("MAX_CONTEXT_SIZE"))
+    max_memory_item_size = int(os.getenv("MAX_MEMORY_ITEM_SIZE"))
+    max_critiques = int(os.getenv("MAX_CRITIQUES"))
+
+    work_dir = os.getenv("WORK_DIR")
+
+    if work_dir is None or not work_dir:
+        work_dir = os.path.join(Path.home(), "miniagi")
+        if not os.path.exists(work_dir):
+            os.makedirs(work_dir)
+
+    print(f"Working directory is {work_dir}")
+
+    try:
+        os.chdir(work_dir)
+    except FileNotFoundError:
+        print("Directory doesn't exist. Set WORK_DIR to an existing directory or leave it blank.")
+        sys.exit(0)
+
+    final_result = run_agent(_agent, _summarizer, sys.argv[1])
+
+    print(final_result)
