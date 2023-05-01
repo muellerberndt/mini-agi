@@ -13,7 +13,7 @@ load_dotenv()
 
 
 if __name__ == "__main__":
-    loader = TextLoader(r"C:\Users\ajayp\OneDrive\Desktop\Moksh\micro-gpt\data\database.txt")
+    loader = TextLoader(os.getenv("DATABASE_TXT"))
     documents = loader.load()
     text_splitter = CharacterTextSplitter(chunk_size=1200, chunk_overlap=0)
     texts = text_splitter.split_documents(documents)
