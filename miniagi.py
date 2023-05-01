@@ -43,10 +43,21 @@ DEBUG = get_bool("DEBUG")
 ENABLE_CRITIC = get_bool("ENABLE_CRITIC")
 PROMPT_USER = get_bool("PROMPT_USER")
 
+
+CREATE_PLAN_PROMPT = f"You are the planner of an autonomous agent running on {operating_system}." + '''
+The agent has the objective: {objective}
+The agent has native web search and scraping capabilities. It can execute local shell commands and Python code.
+
+Create an optimal step-by-step-plan to achieve the objective in the form of a short and concise bullet list.
+'''
+
+
 PROMPT = f"You are an autonomous agent running on {operating_system}." + '''
 OBJECTIVE: {objective} (e.g. "Find a recipe for chocolate chip cookies")
 
-You are working towards the objective on a step-by-step basis. Previous steps:
+Action plan:
+
+{action_plan}
 
 {context}
 
@@ -162,6 +173,18 @@ if __name__ == "__main__":
     max_memory_item_size = int(os.getenv("MAX_MEMORY_ITEM_SIZE"))
     max_critiques = int(os.getenv("MAX_CRITIQUES"))
     context = objective
+
+    with Spinner():
+        try:
+            action_plan = agent.predict(
+                prompt=CREATE_PLAN_PROMPT.format(objective=objective)
+            )
+        except openai.error.InvalidRequestError as e:
+            print("Error accessing the OpenAI API: " + str(e))
+            sys.exit(0)
+
+    print(colored(f"Action plan:\n{action_plan}", "cyan"))
+
     thought = "You awakened moments ago."
 
     work_dir = os.getenv("WORK_DIR")
@@ -200,8 +223,14 @@ if __name__ == "__main__":
         with Spinner():
 
             try:
+                _prompt = PROMPT.format(
+                    context=context,
+                    action_plan=action_plan,
+                    objective=objective
+                )
+
                 response_text = agent.predict(
-                    prompt=PROMPT.format(context=context, objective=objective)
+                    prompt=_prompt
                 )
 
             except openai.error.InvalidRequestError as e:
