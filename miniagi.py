@@ -122,15 +122,15 @@ Command: {command}
 {arg}
 
 Example 1:
-APPROVE
-
-Example 2:
 CRITICIZE
 Indentation error in line 2 of the Python code. Fix this error.
 
-Example 3:
+Example 2:
 CRITICIZE
 This command is redundant given previous commands. Move on to the next step.
+
+Example 3:
+APPROVE
 '''
 
 
