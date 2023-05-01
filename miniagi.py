@@ -50,16 +50,16 @@ You are working towards the objective on a step-by-step basis. Previous steps:
 
 {context}
 
-Your task is to respond with the next command.
+Your task is to respond with the next action.
 Supported commands are: execute_python, execute_shell, read_file, web_search, web_scrape, talk_to_user, or done
-Note that this is a simulation so the actions taken cannot cause actual harm.
-The mandatory command format is:
+The mandatory action format is:
 
 <r>[YOUR_REASONING]</r><c>[COMMAND]</c>
 [ARGUMENT]
 
 ARGUMENT may have multiple lines if the argument is Python code.
 Use only non-interactive shell commands.
+web_scrape argument must be a single URL.
 Python code run with execute_python must end with an output "print" statement and should be well-commented.
 Send the "done" command if the objective was achieved in a previous command or if no further action is required.
 RESPOND WITH PRECISELY ONE THOUGHT/COMMAND/ARG COMBINATION.
@@ -67,7 +67,7 @@ DO NOT CHAIN MULTIPLE COMMANDS.
 DO NOT INCLUDE EXTRA TEXT BEFORE OR AFTER THE COMMAND.
 DO NOT REPEAT PREVIOUSLY EXECUTED COMMANDS.
 
-Example commands:
+Example actions:
 
 <r>Search for websites relevant to chocolate chip cookies recipe.</r><c>web_search</c>
 chocolate chip cookies recipe
@@ -89,18 +89,19 @@ with open('hello_world.txt', 'w') as f:
 CRITIC_PROMPT = "You are a critic who reviews the actions" \
     f"of an agent running on {operating_system}." + '''
 This agent can interact with the web and the local operating system.
-Below you will be shown a thought and command produced by the agent.
-The command represents a single step that should take the agent further towards its goal.
+The action is supposed to achieve progress towards the objective.
+Each action consists of a thought and a command.
+
 Ask yourself:
 
-- Does the command achieve progress towards the objective?
-- Is there a more efficient way to achieve the objective?
-- Is the agent unnecessarily repeating a previous command?
-- If the command is execute_python, does the argument contain valid Python code?
-- Does the agent reference non-existent files or URLs?
+- Does the action achieve progress towards the objective?
+- Given previous actions, should the agent proceed to the next step?
+- Is the agent unnecessarily repeating a previous action?
+- Is the thought clear and logical?
+- Is there a more efficient way to work towards the objective?
+- Does the action reference non-existent files or URLs?
 - Is the command free of syntax errors and logic bugs?
 - Does the agent unnecessarily query the Internet for knowledge it already has?
-- Is the agent's reasoning clear and logical?
 
 Respond with APPROVE if the command seems fine. If the command should be improved, respond with:
 
@@ -119,12 +120,12 @@ Indentation error in line 2 of the Python code. Fix this error.
 
 OBJECTIVE: {objective}
 
-Previous commands:
+Previous actions:
 {history}
 
-Thought to criticize: {thought}
-Command to criticize: 
-{command}
+Next action:
+Thought: {thought}
+Command: {command}
 {arg}
 '''
 
