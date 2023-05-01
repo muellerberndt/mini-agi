@@ -95,15 +95,16 @@ with open('hello_world.txt', 'w') as f:
 CRITIC_PROMPT = "You are a critic who reviews the actions" \
     f"of an agent running on {operating_system}." + '''
 This agent can interact with the web and the local operating system.
-The action is supposed to achieve progress towards the objective.
+The action should achieve progress towards the objective.
 Each action consists of a thought and a command.
+
+Supported commands are: execute_python, execute_shell, read_file, web_search, web_scrape, talk_to_user,
+spawn_agent, or done
 
 Ask yourself:
 
-- Does the action achieve progress towards the objective?
-- Given previous actions, should the agent proceed to the next step?
-- Is the agent unnecessarily repeating a previous action?
 - Is the thought clear and logical?
+- Does the action achieve progress towards the objective?
 - Is there a more efficient way to work towards the objective?
 - Does the action reference non-existent files or URLs?
 - Is the command free of syntax errors and logic bugs?
@@ -132,10 +133,6 @@ CRITICIZE
 Indentation error in line 2 of the Python code. Fix this error.
 
 Example 2:
-CRITICIZE
-This command is redundant given previous commands. Move on to the next step.
-
-Example 3:
 APPROVE
 '''
 
@@ -146,9 +143,9 @@ EXTRA_SUMMARY_HINT = "If the text contains information related to the topic: '{s
     "then include it. If not, write a standard summary."
 
 
-def run_agent(agent: ThinkGPT, summarizer: ThinkGPT, objective: str) -> str:
+def run_agent(agent: ThinkGPT, summarizer: ThinkGPT, objective: str, agent_name: str) -> str:
 
-    print(colored(f"New agent spawned, objective: {objective}", "cyan"))
+    print(colored(f"Agent spawned. Objective: \"{objective}\"", "cyan"))
 
     num_critiques = 0
     command_id = 0
@@ -199,7 +196,12 @@ def run_agent(agent: ThinkGPT, summarizer: ThinkGPT, objective: str) -> str:
 
             if command == "done":
                 print(colored(f"The agent concluded: {thought}", "cyan"))
-                sys.exit(0)
+                _result = summarizer.chunked_summarize(
+                    context,
+                    max_tokens=max_memory_item_size,
+                    instruction_hint="Summarize the agent's actions and the result of: {objective}"
+                )
+                return _result
 
             # Account for GPT-3.5 sometimes including an extra "done"
             if "done" in res_lines[-1]:
@@ -220,7 +222,7 @@ def run_agent(agent: ThinkGPT, summarizer: ThinkGPT, objective: str) -> str:
             continue
 
         if command == "talk_to_user":
-            print(colored(f"MiniAGI: {arg}", 'cyan'))
+            print(colored(f"{agent_name}: {arg}", 'cyan'))
             user_input = input('Your response: ')
             agent.memorize(f"{mem}The user responded with: {user_input}.")
             continue
@@ -229,7 +231,7 @@ def run_agent(agent: ThinkGPT, summarizer: ThinkGPT, objective: str) -> str:
 
         command_line = f"{thought}\nCmd: {command}, Arg: \"{_arg}\""
 
-        print(colored(f"MiniAGI: {command_line}", "cyan"))
+        print(colored(f"{agent_name}: {command_line}", "cyan"))
 
         if command_line in command_history:
             print("The agent repeated a previous command. Retrying...")
@@ -260,7 +262,7 @@ def run_agent(agent: ThinkGPT, summarizer: ThinkGPT, objective: str) -> str:
 
                 if len(response) > 0:
                     print(colored(f"Critic: {response}", "magenta"))
-                    agent.memorize(f"{mem}Revise your command: {response}.")
+                    agent.memorize(f"{mem}Revise your command: {response}")
                     num_critiques += 1
                     continue
 
@@ -316,11 +318,8 @@ def run_agent(agent: ThinkGPT, summarizer: ThinkGPT, objective: str) -> str:
                                 EXTRA_SUMMARY_HINT.format(summarizer_hint=objective))
                 agent.memorize(f"{mem}{file_content}")
             elif command == "spawn_agent":
-                result = run_agent(agent, summarizer, arg)
-                agent.memorize(f"{mem}Actions performed by the agent:\n{result}")
-            elif command == "done":
-                print("Objective achieved.")
-                break
+                result = run_agent(agent, summarizer, arg, f"> {agent_name}")
+                agent.memorize(f"{mem}Agent results summary:\n{result}")
 
             command_history.append(command_line)
         except Exception as e:
@@ -335,14 +334,6 @@ def run_agent(agent: ThinkGPT, summarizer: ThinkGPT, objective: str) -> str:
             print(colored(f"Execution error: {str(e)}", "red"))
             agent.memorize(f"{mem}The command returned an error:\n{str(e)}\n"\
                 "You should fix the command or code.")
-
-    _result = summarizer.chunked_summarize(
-        context,
-        max_tokens=max_memory_item_size,
-        instruction_hint="Summarize the agent's actions and results."
-    )
-    print("Subagent returned:\n" + _result)
-    return _result
 
 if __name__ == "__main__":
 
@@ -381,6 +372,4 @@ if __name__ == "__main__":
         print("Directory doesn't exist. Set WORK_DIR to an existing directory or leave it blank.")
         sys.exit(0)
 
-    final_result = run_agent(_agent, _summarizer, sys.argv[1])
-
-    print(final_result)
+    run_agent(_agent, _summarizer, sys.argv[1], "MiniAGI")
