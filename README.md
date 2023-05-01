@@ -4,7 +4,7 @@
 	<img src="/static/avatar.jpg" height="320px"/>
 </p>
 
-MiniAGI is a simple and effective autonomous agent compatible with GPT-3.5-Turbo and GPT-4. It combines a robust prompt, a minimal set of tools, and  short-term memory (Chain of Thoughts). Data augmentation via vector stores will be added soon.
+MiniAGI is a simple and effective autonomous agent compatible with GPT-3.5-Turbo and GPT-4. It combines a robust prompt, a minimal set of tools, and  short-term memory (Chain of Thoughts).
 
 ## Installation
 
