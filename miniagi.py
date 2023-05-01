@@ -63,7 +63,7 @@ Use only non-interactive shell commands.
 web_scrape argument must be a single URL.
 Python code run with execute_python must end with an output "print" statement and should be well-commented.
 Send the "done" command if the objective was achieved in a previous command or if no further action is required.
-If a task is complex and requires multiple steps, delegate it to a subagent with spawn_agent.
+Decompose complex tasks into subtasks and delegate those subtasks to subagents with spawn_agent.
 When spawning an agent with spawn_agent, pass the objective as the argument.
 RESPOND WITH PRECISELY ONE THOUGHT/COMMAND/ARG COMBINATION.
 DO NOT CHAIN MULTIPLE COMMANDS.
