@@ -64,7 +64,7 @@ web_scrape argument must be a single URL.
 Python code run with execute_python must end with an output "print" statement and should be well-commented.
 Send the "done" command if the objective was achieved in a previous command or if no further action is required.
 Decompose complex tasks into subtasks and delegate those subtasks to subagents with spawn_agent.
-When spawning an agent with spawn_agent, pass the objective as the argument.
+When spawning an agent with spawn_agent, pass the objective and required data as the argument.
 RESPOND WITH PRECISELY ONE THOUGHT/COMMAND/ARG COMBINATION.
 DO NOT CHAIN MULTIPLE COMMANDS.
 DO NOT INCLUDE EXTRA TEXT BEFORE OR AFTER THE COMMAND.
@@ -143,9 +143,24 @@ EXTRA_SUMMARY_HINT = "If the text contains information related to the topic: '{s
     "then include it. If not, write a standard summary."
 
 
-def run_agent(agent: ThinkGPT, summarizer: ThinkGPT, objective: str, agent_name: str) -> str:
+def spawn_agent(summarizer: ThinkGPT, objective: str, agent_name: str) -> str:
+    """
+    Spawns a new agent with the given objective and agent_name, and returns a summary of the agent's actions.
 
-    print(colored(f"Agent spawned. Objective: \"{objective}\"", "cyan"))
+    Args:
+        summarizer (ThinkGPT): A ThinkGPT instance to be used for summarizing agent memory.
+        objective (str): The objective the spawned agent should work towards.
+        agent_name (str): The name of the spawned agent.
+
+    Returns:
+        str: A summary of the agent's actions and results.
+    """
+
+    agent = ThinkGPT(
+        model_name=os.getenv("MODEL"),
+        request_timeout=600,
+        verbose=False
+        )
 
     num_critiques = 0
     command_id = 0
@@ -224,7 +239,7 @@ def run_agent(agent: ThinkGPT, summarizer: ThinkGPT, objective: str, agent_name:
         if command == "talk_to_user":
             print(colored(f"{agent_name}: {arg}", 'cyan'))
             user_input = input('Your response: ')
-            agent.memorize(f"{mem}The user responded with: {user_input}.")
+            agent.memorize(f"{mem}The user responded with: {user_input}")
             continue
 
         _arg = arg.replace("\n", "\\n") if len(arg) < 64 else f"{arg[:64]}...".replace("\n", "\\n")
@@ -318,7 +333,8 @@ def run_agent(agent: ThinkGPT, summarizer: ThinkGPT, objective: str, agent_name:
                                 EXTRA_SUMMARY_HINT.format(summarizer_hint=objective))
                 agent.memorize(f"{mem}{file_content}")
             elif command == "spawn_agent":
-                result = run_agent(agent, summarizer, arg, f"> {agent_name}")
+                print(colored(f"Spawning agent with bjective: \"{arg}\"", "cyan"))
+                result = spawn_agent(summarizer, arg, f"> {agent_name}")
                 agent.memorize(f"{mem}Agent results summary:\n{result}")
 
             command_history.append(command_line)
@@ -336,12 +352,6 @@ def run_agent(agent: ThinkGPT, summarizer: ThinkGPT, objective: str, agent_name:
                 "You should fix the command or code.")
 
 if __name__ == "__main__":
-
-    _agent = ThinkGPT(
-        model_name=os.getenv("MODEL"),
-        request_timeout=600,
-        verbose=False
-        )
 
     _summarizer = ThinkGPT(
         model_name=os.getenv("SUMMARIZER_MODEL"),
@@ -372,4 +382,4 @@ if __name__ == "__main__":
         print("Directory doesn't exist. Set WORK_DIR to an existing directory or leave it blank.")
         sys.exit(0)
 
-    run_agent(_agent, _summarizer, sys.argv[1], "MiniAGI")
+    spawn_agent(_summarizer, sys.argv[1], "MiniAGI")
