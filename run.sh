@@ -1,6 +1,6 @@
 #! /bin/bash
 
-test ${#} -gt 1 || { echo "usage: $0 <prompt>"; exit; }
+test ${#} -gt 0 || { echo "usage: $0 <prompt>"; exit; }
 
 # copy environment into working directory
 cp .env ./appdata
