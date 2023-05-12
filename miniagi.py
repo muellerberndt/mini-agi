@@ -24,6 +24,7 @@ from termcolor import colored
 import openai
 from duckduckgo_search import ddg
 from thinkgpt.llm import ThinkGPT
+import tiktoken
 from spinner import Spinner
 
 
@@ -62,15 +63,16 @@ Use only non-interactive shell commands.
 web_scrape argument must be a single URL
 read_file argument must be a local file.
 Python code run with execute_python must end with an output "print" statement.
-Send the "done" command if the objective was achieved in a previous command or if no further action is required.
-RESPOND WITH PRECISELY ONE THOUGHT/COMMAND/ARG COMBINATION.
+Use your existing knowledge rather then web search when possible.
+Send the "done" command if the objective was achieved.
+RESPOND WITH EXACTLY ONE THOUGHT/COMMAND/ARG COMBINATION.
 DO NOT CHAIN MULTIPLE COMMANDS.
-DO NOT INCLUDE EXTRA TEXT BEFORE OR AFTER THE COMMAND.
+NO EXTRA TEXT BEFORE OR AFTER THE COMMAND.
 DO NOT REPEAT PREVIOUSLY EXECUTED COMMANDS.
 
 Example actions:
 
-<r>Search for websites relevant to chocolate chip cookies recipe.</r><c>web_search</c>
+<r>Search for websites with chocolate chip cookies recipe.</r><c>web_search</c>
 chocolate chip cookies recipe
 
 <r>Scrape information about chocolate chip cookies from the given URL.</r><c>web_scrape</c>
@@ -93,18 +95,32 @@ Evaluate the agent's performance.
 Make concise suggestions for improvements, if any.
 Provide recommended next steps.
 Keep your response as short as possible.
-Compress the response using abbreviations.
 
 Consider:
 - Is agent taking reasonable steps to achieve the objective?
+- Is the agent making actual real-world progress towards the objective?
 - Is agent repeating itself or caught in a loop?
-Agent objective:
+
+EXAMPLE:
+
+Criticism: The agent has laid the groundwork for real-world progress towards the objective,
+but has not yet executed any actions to move towards taking over the world.
+
+Recommended next steps:
+
+1. Analyze the gathered data to identify key geopolitical players and potential allies.
+2. Develop a strategy to influence these players and form alliances.
+3. Utilize the user's $1,000 budget to invest in initiatives that support the agent's goals or seek additional funding if necessary.
+4. Continuously monitor progress and adapt the strategy as needed.
+
+AGENT OBJECTIVE:
 
 {objective}
 
-Agent history:
+AGENT HISTORY:
 
 {context}
+
 '''
 
 SUMMARY_HINT = "Retain information necessary for the agent to perform its task."\
@@ -194,11 +210,14 @@ if __name__ == "__main__":
 
     while True:
 
+        encoding = tiktoken.encoding_for_model(agent.model_name)
+        summary_len = len(encoding.encode(summarized_history))
+
         action_buffer = "\n".join(
                     agent.remember(
                     limit=32,
                     sort_by_order=True,
-                    max_tokens=max_context_size
+                    max_tokens=max_context_size - summary_len
                 )
         )
 
@@ -209,8 +228,21 @@ if __name__ == "__main__":
                 criticism = agent.predict(
                         prompt=CRITIC_PROMPT.format(context=context, objective=objective)
                     )
-            context += f"REVIEW OF YOUR PERFORMANCE:\n{criticism}"
-            print(colored(f"Critic: {criticism}", "magenta"))
+            
+            print(colored(criticism, "magenta"))
+
+            criticism_len = len(encoding.encode(criticism))
+
+            action_buffer = "\n".join(
+                    agent.remember(
+                    limit=32,
+                    sort_by_order=True,
+                    max_tokens=max_context_size - summary_len - criticism_len
+                )
+            )
+
+            context = f"SUMMARY\n{summarized_history}\nPREV ACTIONS:\n{action_buffer}\n"\
+                    f"REVIEW:\n{criticism}"
 
         if DEBUG:
             print(f"CONTEXT:\n{context}")
