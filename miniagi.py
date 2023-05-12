@@ -105,11 +105,9 @@ Agent history:
 {context}
 '''
 
-
 SUMMARY_HINT = "Do your best to retain information necessary for the agent to perform its task."
 EXTRA_SUMMARY_HINT = "If the text contains information related to the topic: '{summarizer_hint}'"\
     "then include it. If not, write a standard summary."
-
 
 def update_memory(
         _agent: ThinkGPT,
