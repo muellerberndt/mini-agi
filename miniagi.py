@@ -90,7 +90,8 @@ with open('hello_world.txt', 'w') as f:
 CRITIC_PROMPT = '''
 You are a critic reviewing the actions of an autonomous agent.
 Evaluate the agent's performance.
-Keep your response short (100 words or less).
+Keep your response as short as possible.
+Compress the response using abbreviations.
 Make clear suggestions for improvements, if any.
 
 Consider:
@@ -140,7 +141,7 @@ def update_memory(
             f"{summary}\n{new_memory}", max_memory_item_size,
             instruction_hint="Generate a brief summary given the previous summary"\
                 "of the agent's history and its last action. Maintain the entire history."\
-                " Be concise, use abbreviations."
+                " Keep it as short as possible, compress your response using abbreviations."
             )
 
     _agent.memorize(new_memory)
@@ -341,14 +342,15 @@ if __name__ == "__main__":
             elif command == "done":
                 print("Objective achieved.")
                 sys.exit(0)
-
-            summarized_history = update_memory(
-                agent,
-                action,
-                observation,
-                summarized_history,
-                update_summary=True
-            )
+            
+            with Spinner():
+                summarized_history = update_memory(
+                    agent,
+                    action,
+                    observation,
+                    summarized_history,
+                    update_summary=True
+                )
 
         except Exception as e:
             if "context length" in str(e):
