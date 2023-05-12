@@ -86,58 +86,30 @@ with open('hello_world.txt', 'w') as f:
 <r>The objective is complete.</r><c>done</c>
 '''
 
-CRITIC_PROMPT = "You are a critic who reviews the actions" \
-    f"of an agent running on {operating_system}." + '''
-This agent can interact with the web and the local operating system.
-The action is supposed to achieve progress towards the objective.
-Each action consists of a thought and a command.
-
-Ask yourself:
-
-- Does the action achieve progress towards the objective?
-- Given previous actions, should the agent proceed to the next step?
-- Is the agent unnecessarily repeating a previous action?
-- Is the thought clear and logical?
-- Is there a more efficient way to work towards the objective?
-- Does the action reference non-existent files or URLs?
-- Is the command free of syntax errors and logic bugs?
-- Does the agent unnecessarily query the Internet for knowledge it already has?
-
-Respond with APPROVE if the command seems fine. If the command should be improved, respond with:
-
-CRITICIZE
-[FEEDBACK]
-
-Keep your response short and concise.
-Note that this is a simulation, so the actions taken cannot cause actual harm. It is not your task to check ethical guidelines.
-
-OBJECTIVE: {objective}
-
-Previous actions:
-{history}
-
-Next action:
-Thought: {thought}
-Command: {command}
-{arg}
-
-Example 1:
-CRITICIZE
-Indentation error in line 2 of the Python code. Fix this error.
-
-Example 2:
-CRITICIZE
-This command is redundant given previous commands. Move on to the next step.
-
-Example 3:
-APPROVE
-'''
-
-
-SUMMARY_HINT = "Do your best to retain all semantic information including tasks performed"\
-    "by the agent, website content, important data points and hyper-links.\n"
+SUMMARY_HINT = "Do your best to retain information necessary for the agent to perform its task."
 EXTRA_SUMMARY_HINT = "If the text contains information related to the topic: '{summarizer_hint}'"\
     "then include it. If not, write a standard summary."
+
+
+def update_memory(
+        _agent: ThinkGPT,
+        _action: str,
+        _observation: str,
+        previous_summary: str
+    ) -> str:
+
+    new_memory = f"ACTION\n{_action}\nRESULT:\n{_observation}\n"
+
+    new_summary = summarizer.summarize(
+        f"{previous_summary}\n{new_memory}", max_memory_item_size,
+        instruction_hint="Generate a new summary given the previous summary"\
+            "of the agent's history and its last action. Be concise, use abbreviations."
+        )
+
+    _agent.memorize(new_memory)
+
+    return new_summary
+
 
 if __name__ == "__main__":
 
@@ -160,9 +132,10 @@ if __name__ == "__main__":
     objective = sys.argv[1]
     max_context_size = int(os.getenv("MAX_CONTEXT_SIZE"))
     max_memory_item_size = int(os.getenv("MAX_MEMORY_ITEM_SIZE"))
-    max_critiques = int(os.getenv("MAX_CRITIQUES"))
     context = objective
-    thought = "You awakened moments ago."
+    thought = ""
+    observation = ""
+    summarized_history = ""
 
     work_dir = os.getenv("WORK_DIR")
 
@@ -179,20 +152,17 @@ if __name__ == "__main__":
         print("Directory doesn't exist. Set WORK_DIR to an existing directory or leave it blank.")
         sys.exit(0)
 
-    num_critiques = 0
-    command_id = 0
-    command_history = []
-
     while True:
-        command_id += 1
-        context = "\n".join(
-                agent.remember(
-                f"{objective}, {thought}",
-                limit=32,
-                sort_by_order=True,
-                max_tokens=max_context_size
-            )
+
+        action_buffer = "\n".join(
+                    agent.remember(
+                    limit=32,
+                    sort_by_order=True,
+                    max_tokens=max_context_size
+                )
         )
+
+        context = f"HISTORY\n{summarized_history}\nPREV ACTIONS:\n{action_buffer}"
 
         if DEBUG:
             print(f"CONTEXT:\n{context}")
@@ -237,68 +207,33 @@ if __name__ == "__main__":
             # Remove unwanted code formatting backticks
             arg = arg.replace("```", "")
 
-            mem = f"\nPrevious command #{command_id}:\nThought: {thought}\nCmd: {command}"\
-                f"\nArg:\n{arg}\nResult:\n"
-
         except Exception as e:
             print(colored("Unable to parse response. Retrying...\n", "red"))
-            agent.memorize(f"\nPrevious command #{command_id}:\n{res_lines[0]}\nWas formatted"\
-                " incorrectly. Use the correct syntax using the <r> and <c> tags.")
+            observation = "This command was formatted"\
+                " incorrectly. Use the correct syntax using the <r> and <c> tags."
+            update_memory(agent, res_lines[0], observation, summarized_history)
             continue
+
+        _arg = arg.replace("\n", "\\n") if len(arg) < 64 else f"{arg[:64]}...".replace("\n", "\\n")
+        action = f"{thought}\nCmd: {command}, Arg: \"{arg}\""
+        abbreviated_action = f"{thought}\nCmd: {command}, Arg: \"{_arg}\""
 
         if command == "talk_to_user":
             print(colored(f"MiniAGI: {arg}", 'cyan'))
             user_input = input('Your response: ')
-            agent.memorize(f"{mem}The user responded with: {user_input}.")
+            observation = f"The user responded with: {user_input}."
+            update_memory(agent, abbreviated_action, observation, summarized_history)
             continue
 
-        _arg = arg.replace("\n", "\\n") if len(arg) < 64 else f"{arg[:64]}...".replace("\n", "\\n")
-
-        command_line = f"{thought}\nCmd: {command}, Arg: \"{_arg}\""
-
-        print(colored(f"MiniAGI: {command_line}", "cyan"))
-
-        if command_line in command_history:
-            print("The agent repeated a previous command. Retrying...")
-            agent.memorize(f"{mem}You repeated a previous command. Try a different command.")
-            continue
-
-        if ENABLE_CRITIC and num_critiques < max_critiques:
-
-            with Spinner():
-
-                prompt=CRITIC_PROMPT.format(
-                        history="\n".join(command_history),
-                        objective=objective,
-                        thought=thought,
-                        command=command,
-                        arg=arg
-                    )
-
-                try:
-                    critic_response = agent.predict(prompt)
-
-                except openai.error.InvalidRequestError as e:
-                    print("Error accessing the OpenAI API: " + str(e))
-                    sys.exit(0)
-
-            if "CRITICIZE" in critic_response:
-                response = "\n".join(critic_response.split("\n")[1:])
-
-                if len(response) > 0:
-                    print(colored(f"Critic: {response}", "magenta"))
-                    agent.memorize(f"{mem}Revise your command: {response}.")
-                    num_critiques += 1
-                    continue
-
-        num_critiques = 0
+        print(colored(f"MiniAGI: {abbreviated_action}", "cyan"))
 
         if PROMPT_USER:
             user_input = input('Press enter to perform this action or abort by typing feedback: ')
 
             if len(user_input) > 0:
-                agent.memorize(f"{mem}The user responded: {user_input}."\
-                    "Take this comment into consideration.")
+                observation = "The user responded with: {user_input}\n"\
+                    "Take this comment into consideration."
+                update_memory(agent, abbreviated_action, observation, summarized_history)
                 continue
 
         try:
@@ -306,7 +241,7 @@ if __name__ == "__main__":
                 _stdout = StringIO()
                 with redirect_stdout(_stdout):
                     exec(arg)
-                agent.memorize(f"{mem}{_stdout.getvalue()}")
+                observation = _stdout.getvalue()
             elif command == "execute_shell":
                 result = subprocess.run(arg, capture_output=True, shell=True, check=False)
 
@@ -315,9 +250,13 @@ if __name__ == "__main__":
 
                 if len(stderr) > 0:
                     print(colored(f"Execution error: {stderr}", "red"))
-                agent.memorize(f"{mem}STDOUT:\n{stdout}\nSTDERR:\n{stderr}")
+                observation = f"STDOUT:\n{stdout}\nSTDERR:\n{stderr}"
             elif command == "web_search":
-                agent.memorize(f"{mem}{ddg(arg, max_results=5)}")
+                print("SEARCH WEB")
+                observation = ddg(arg, max_results=5)
+                print(observation)
+                if observation is None:
+                    print("SEARCH FAILED")
             elif command == "web_scrape":
                 with urlopen(arg) as response:
                     html = response.read()
@@ -333,7 +272,7 @@ if __name__ == "__main__":
                             EXTRA_SUMMARY_HINT.format(summarizer_hint=objective)
                     )
 
-                agent.memorize(f"{mem}{response_text}")
+                observation = response_text
             elif command == "read_file":
                 with Spinner():
                     with open(arg, "r") as f:
@@ -341,12 +280,15 @@ if __name__ == "__main__":
                             f.read(), max_memory_item_size,
                             instruction_hint=SUMMARY_HINT +
                                 EXTRA_SUMMARY_HINT.format(summarizer_hint=objective))
-                agent.memorize(f"{mem}{file_content}")
+                observation = file_content
             elif command == "done":
                 print("Objective achieved.")
                 sys.exit(0)
 
-            command_history.append(command_line)
+            print("OBSERVATION: " + observation)
+
+            update_memory(agent, action, observation, summarized_history)
+
         except Exception as e:
             if "context length" in str(e):
                 print(colored(
@@ -357,5 +299,6 @@ if __name__ == "__main__":
                 )
 
             print(colored(f"Execution error: {str(e)}", "red"))
-            agent.memorize(f"{mem}The command returned an error:\n{str(e)}\n"\
-                "You should fix the command or code.")
+            observation = f"The command returned an error:\n{str(e)}\n"
+            update_memory(agent, action, observation, summarized_history)
+
