@@ -101,8 +101,6 @@ def update_memory(
 
     new_memory = f"ACTION\n{_action}\nRESULT:\n{_observation}\n"
 
-    # print("CREATING NEW SUMMARY")
-
     if (update_summary):
         summary = summarizer.summarize(
             f"{summary}\n{new_memory}", max_memory_item_size,
