@@ -95,20 +95,25 @@ def update_memory(
         _agent: ThinkGPT,
         _action: str,
         _observation: str,
-        previous_summary: str
+        summary: str,
+        update_summary: bool = True
     ) -> str:
 
     new_memory = f"ACTION\n{_action}\nRESULT:\n{_observation}\n"
 
-    new_summary = summarizer.summarize(
-        f"{previous_summary}\n{new_memory}", max_memory_item_size,
-        instruction_hint="Generate a new summary given the previous summary"\
-            "of the agent's history and its last action. Be concise, use abbreviations."
-        )
+    # print("CREATING NEW SUMMARY")
+
+    if (update_summary):
+        summary = summarizer.summarize(
+            f"{summary}\n{new_memory}", max_memory_item_size,
+            instruction_hint="Generate a brief summary given the previous summary"\
+                "of the agent's history and its last action. Maintain the entire history."\
+                " Be concise, use abbreviations."
+            )
 
     _agent.memorize(new_memory)
 
-    return new_summary
+    return summary
 
 
 if __name__ == "__main__":
@@ -162,7 +167,7 @@ if __name__ == "__main__":
                 )
         )
 
-        context = f"HISTORY\n{summarized_history}\nPREV ACTIONS:\n{action_buffer}"
+        context = f"SUMMARY\n{summarized_history}\nPREV ACTIONS:\n{action_buffer}"
 
         if DEBUG:
             print(f"CONTEXT:\n{context}")
@@ -211,7 +216,8 @@ if __name__ == "__main__":
             print(colored("Unable to parse response. Retrying...\n", "red"))
             observation = "This command was formatted"\
                 " incorrectly. Use the correct syntax using the <r> and <c> tags."
-            update_memory(agent, res_lines[0], observation, summarized_history)
+            with Spinner():
+                summarized_history = update_memory(agent, res_lines[0], observation, summarized_history)
             continue
 
         _arg = arg.replace("\n", "\\n") if len(arg) < 64 else f"{arg[:64]}...".replace("\n", "\\n")
@@ -222,7 +228,8 @@ if __name__ == "__main__":
             print(colored(f"MiniAGI: {arg}", 'cyan'))
             user_input = input('Your response: ')
             observation = f"The user responded with: {user_input}."
-            update_memory(agent, abbreviated_action, observation, summarized_history)
+            with Spinner():
+                summarized_history = update_memory(agent, abbreviated_action, observation, summarized_history)
             continue
 
         print(colored(f"MiniAGI: {abbreviated_action}", "cyan"))
@@ -233,7 +240,8 @@ if __name__ == "__main__":
             if len(user_input) > 0:
                 observation = "The user responded with: {user_input}\n"\
                     "Take this comment into consideration."
-                update_memory(agent, abbreviated_action, observation, summarized_history)
+                with Spinner():
+                    summarized_history = update_memory(agent, abbreviated_action, observation, summarized_history)
                 continue
 
         try:
@@ -252,11 +260,7 @@ if __name__ == "__main__":
                     print(colored(f"Execution error: {stderr}", "red"))
                 observation = f"STDOUT:\n{stdout}\nSTDERR:\n{stderr}"
             elif command == "web_search":
-                print("SEARCH WEB")
-                observation = ddg(arg, max_results=5)
-                print(observation)
-                if observation is None:
-                    print("SEARCH FAILED")
+                observation = str(ddg(arg, max_results=5))
             elif command == "web_scrape":
                 with urlopen(arg) as response:
                     html = response.read()
@@ -285,9 +289,7 @@ if __name__ == "__main__":
                 print("Objective achieved.")
                 sys.exit(0)
 
-            print("OBSERVATION: " + observation)
-
-            update_memory(agent, action, observation, summarized_history)
+            summarized_history = update_memory(agent, action, observation, summarized_history)
 
         except Exception as e:
             if "context length" in str(e):
@@ -300,5 +302,6 @@ if __name__ == "__main__":
 
             print(colored(f"Execution error: {str(e)}", "red"))
             observation = f"The command returned an error:\n{str(e)}\n"
-            update_memory(agent, action, observation, summarized_history)
 
+            with Spinner():
+                summarized_history = update_memory(agent, action, observation, summarized_history)
