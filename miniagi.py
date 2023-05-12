@@ -90,13 +90,14 @@ with open('hello_world.txt', 'w') as f:
 CRITIC_PROMPT = '''
 You are a critic reviewing the actions of an autonomous agent.
 Evaluate the agent's performance.
+Make concise suggestions for improvements, if any.
+Provide recommended next steps.
 Keep your response as short as possible.
 Compress the response using abbreviations.
-Make clear suggestions for improvements, if any.
 
 Consider:
-- Is the agent repeating itself or caught in a loop?
-- Do the agents' actions help achieve the objective in a real-world context?
+- Is agent taking reasonable steps to achieve the objective?
+- Is agent repeating itself or caught in a loop?
 Agent objective:
 
 {objective}
@@ -106,9 +107,10 @@ Agent history:
 {context}
 '''
 
-SUMMARY_HINT = "Do your best to retain information necessary for the agent to perform its task."
-EXTRA_SUMMARY_HINT = "If the text contains information related to the topic: '{summarizer_hint}'"\
-    "then include it. If not, write a standard summary."
+SUMMARY_HINT = "Retain information necessary for the agent to perform its task."\
+    "Use short sentences and abbreviations."
+EXTRA_SUMMARY_HINT = "Consider the agent's objective: '{summarizer_hint}' when"\
+    " evaluating what information to include."
 
 def update_memory(
         _agent: ThinkGPT,
@@ -139,9 +141,9 @@ def update_memory(
     if update_summary:
         summary = summarizer.summarize(
             f"{summary}\n{new_memory}", max_memory_item_size,
-            instruction_hint="Generate a brief summary given the previous summary"\
+            instruction_hint="Generate a new summary given the previous summary"\
                 "of the agent's history and its last action. Maintain the entire history."\
-                " Keep it as short as possible, compress your response using abbreviations."
+                " Keep it short. Compress the summary using abbreviations."
             )
 
     _agent.memorize(new_memory)
@@ -207,8 +209,8 @@ if __name__ == "__main__":
                 criticism = agent.predict(
                         prompt=CRITIC_PROMPT.format(context=context, objective=objective)
                     )
-            context += f"Consider the criticism: {criticism}"
-            print(colored(f"Criticism: {criticism}", "magenta"))
+            context += f"REVIEW OF YOUR PERFORMANCE:\n{criticism}"
+            print(colored(f"Critic: {criticism}", "magenta"))
 
         if DEBUG:
             print(f"CONTEXT:\n{context}")
@@ -286,8 +288,7 @@ if __name__ == "__main__":
             user_input = input('Press enter to perform this action or abort by typing feedback: ')
 
             if len(user_input) > 0:
-                observation = "The user responded with: {user_input}\n"\
-                    "Take this comment into consideration."
+                observation = "The user responded with: {user_input}"
                 with Spinner():
                     summarized_history = update_memory(
                         agent,
