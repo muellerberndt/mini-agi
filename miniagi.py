@@ -233,7 +233,7 @@ if __name__ == "__main__":
                 criticism = agent.predict(
                         prompt=CRITIC_PROMPT.format(context=context, objective=objective)
                     )
-            
+
             print(colored(criticism, "magenta"))
 
             criticism_len = len(encoding.encode(criticism))
@@ -383,7 +383,7 @@ if __name__ == "__main__":
             elif command == "done":
                 print("Objective achieved.")
                 sys.exit(0)
-            
+
             with Spinner():
                 summarized_history = update_memory(
                     agent,
