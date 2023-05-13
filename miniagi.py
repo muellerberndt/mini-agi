@@ -161,7 +161,8 @@ def update_memory(
 
     if update_summary:
         summary = summarizer.summarize(
-            f"{summary}\n{new_memory}", max_memory_item_size,
+            f"Current summary:\n{summary}\nAdd to summary:\n{new_memory}",
+            max_memory_item_size,
             instruction_hint="Generate a new summary given the previous summary"\
                 "of the agent's history and its last action. Maintain the entire history."\
                 " Keep it short. Compress the summary using abbreviations."
