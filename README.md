@@ -4,7 +4,7 @@
 	<img src="/static/mini-agi-cover.png" height="320px"/>
 </p>
 
-MiniAGI is a simple and effective autonomous agent compatible with GPT-3.5-Turbo and GPT-4. It combines a robust prompt, a minimal set of tools, and  short-term memory (Chain of Thoughts).
+MiniAGI is a simple autonomous agent compatible with GPT-3.5-Turbo and GPT-4. It combines a robust prompt with a minimal set of tools, chain-of-thoughts, and short-term memory with summarization. The agent is also capable of inner monologue and self-critcism.
 
 ## Installation
 
@@ -29,7 +29,7 @@ For example:
 
 ### Enabling the critic
 
-The critic is an experimental feature that may improve accuracy of the agent at the cost of additional API requests. To activate it set `ENABLE_CRITIC` to `true` in your env.
+The critic may improve accuracy of the agent at the cost of additional API requests. To activate it set `ENABLE_CRITIC` to `true` in your env.
 
 ### Advanced usage
 
