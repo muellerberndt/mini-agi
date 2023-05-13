@@ -52,7 +52,7 @@ You are working towards the objective on a step-by-step basis. Previous steps:
 {context}
 
 Your task is to respond with the next action.
-Supported commands are: execute_python, execute_shell, read_file, web_search, web_scrape, talk_to_user, or done
+Supported commands are: internal_monologue, execute_python, execute_shell, read_file, web_search, web_scrape, talk_to_user, or done
 The mandatory action format is:
 
 <r>[YOUR_REASONING]</r><c>[COMMAND]</c>
@@ -71,6 +71,11 @@ NO EXTRA TEXT BEFORE OR AFTER THE COMMAND.
 DO NOT REPEAT PREVIOUSLY EXECUTED COMMANDS.
 
 Example actions:
+
+<r>Think about how to organize the book into chapters</r><c>internal_monologue</c>
+1. Chapter 1: Introduction
+2. Chapter 2: Overview
+(...)
 
 <r>Search for websites with chocolate chip cookies recipe.</r><c>web_search</c>
 chocolate chip cookies recipe
@@ -332,6 +337,9 @@ if __name__ == "__main__":
                 continue
 
         try:
+            if command == "internal_monologue":
+                observation = arg
+                print(colored(f"MiniAGI is thinking to itself:\n{arg}", "green"))
             if command == "execute_python":
                 _stdout = StringIO()
                 with redirect_stdout(_stdout):
