@@ -103,20 +103,18 @@ Keep your response as short as possible.
 
 Consider:
 - Is agent taking reasonable steps to achieve the objective?
-- Is the agent making actual real-world progress towards the objective?
+- Is agent making actual real-world progress towards the objective?
 - Is agent repeating itself or caught in a loop?
 
 EXAMPLE:
 
-Criticism: The agent has laid the groundwork for real-world progress towards the objective,
-but has not yet executed any actions to move towards taking over the world.
+Criticism: The agent has been pretending to order pizza but not actually
+taken any real-world action. The agent should course-correct.
 
 Recommended next steps:
 
-1. Analyze the gathered data to identify key geopolitical players and potential allies.
-2. Develop a strategy to influence these players and form alliances.
-3. Utilize the user's $1,000 budget to invest in initiatives that support the agent's goals or seek additional funding if necessary.
-4. Continuously monitor progress and adapt the strategy as needed.
+1. Request an Uber API access token from the user.
+2. Use the Uber API to order pizza.
 
 AGENT OBJECTIVE:
 
