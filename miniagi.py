@@ -108,7 +108,7 @@ Consider:
 
 EXAMPLE:
 
-Criticism: The agent has been pretending to order pizza but not actually
+Criticism: The agent has been pretending to order pizza but has not actually
 taken any real-world action. The agent should course-correct.
 
 Recommended next steps:
