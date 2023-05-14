@@ -198,6 +198,7 @@ if __name__ == "__main__":
     thought = ""
     observation = ""
     summarized_history = ""
+    encoding = tiktoken.encoding_for_model(agent.model_name)
 
     work_dir = os.getenv("WORK_DIR")
 
@@ -216,7 +217,6 @@ if __name__ == "__main__":
 
     while True:
 
-        encoding = tiktoken.encoding_for_model(agent.model_name)
         summary_len = len(encoding.encode(summarized_history))
 
         action_buffer = "\n".join(
@@ -360,30 +360,25 @@ if __name__ == "__main__":
             elif command == "web_scrape":
                 with urlopen(arg) as response:
                     html = response.read()
-
                 with Spinner():
-                    response_text = summarizer.chunked_summarize(
-                        content=BeautifulSoup(
+                    observation = BeautifulSoup(
                             html,
                             features="lxml"
-                        ).get_text(),
-                        max_tokens=max_memory_item_size,
-                        instruction_hint=SUMMARY_HINT +
-                            EXTRA_SUMMARY_HINT.format(summarizer_hint=objective)
-                    )
-
+                        ).get_text()
                 observation = response_text
             elif command == "read_file":
                 with Spinner():
                     with open(arg, "r") as f:
-                        file_content = summarizer.chunked_summarize(
-                            f.read(), max_memory_item_size,
-                            instruction_hint=SUMMARY_HINT +
-                                EXTRA_SUMMARY_HINT.format(summarizer_hint=objective))
-                observation = file_content
+                        observation = f.read()
             elif command == "done":
                 print("Objective achieved.")
                 sys.exit(0)
+
+            if len(encoding.encode(observation)) > max_memory_item_size:
+                observation = summarizer.chunked_summarize(
+                    observation, max_memory_item_size,
+                    instruction_hint=SUMMARY_HINT +
+                        EXTRA_SUMMARY_HINT.format(summarizer_hint=objective))
 
             with Spinner():
                 summarized_history = update_memory(
