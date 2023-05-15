@@ -70,6 +70,8 @@ DO NOT CHAIN MULTIPLE COMMANDS.
 NO EXTRA TEXT BEFORE OR AFTER THE COMMAND.
 DO NOT REPEAT PREVIOUSLY EXECUTED COMMANDS.
 
+Each action returns an observation. Important: Observations may be summarized to fit into your limited memory.
+
 Example actions:
 
 <r>Think about how to organize the book into chapters</r><c>internal_monologue</c>
@@ -87,7 +89,6 @@ https://example.com/chocolate-chip-cookies
 What is the URL of a website with chocolate chip cookies recipes?
 
 <r>Write 'Hello, world!' to file</r><c>execute_python</c>
-# Opening file in write mode and writing 'Hello, world!' into it
 with open('hello_world.txt', 'w') as f:
     f.write('Hello, world!')
 
