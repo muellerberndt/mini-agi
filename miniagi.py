@@ -60,10 +60,11 @@ The mandatory action format is:
 
 ARGUMENT may have multiple lines if the argument is Python code.
 Use only non-interactive shell commands.
-web_scrape argument must be a single URL
+web_scrape argument must be a single URL.
 read_file argument must be a local file.
 Python code run with execute_python must end with an output "print" statement.
 Use your existing knowledge rather then web search when possible.
+Use internal_monologue rather than Python to plan & organize thoughts.
 Send the "done" command if the objective was achieved.
 Your short-term memory is limited! Use temp files to deal with large amounts of data.
 RESPOND WITH EXACTLY ONE THOUGHT/COMMAND/ARG COMBINATION.
