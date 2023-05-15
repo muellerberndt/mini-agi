@@ -65,6 +65,7 @@ read_file argument must be a local file.
 Python code run with execute_python must end with an output "print" statement.
 Use your existing knowledge rather then web search when possible.
 Send the "done" command if the objective was achieved.
+Your short-term memory is limited! Use temp files to deal with large amounts of data.
 RESPOND WITH EXACTLY ONE THOUGHT/COMMAND/ARG COMBINATION.
 DO NOT CHAIN MULTIPLE COMMANDS.
 NO EXTRA TEXT BEFORE OR AFTER THE COMMAND.
@@ -105,7 +106,9 @@ Keep your response as short as possible.
 Consider:
 - Is agent taking reasonable steps to achieve the objective?
 - Is agent making actual real-world progress towards the objective?
+- Is the agent taking redundant or unnecessary steps?
 - Is agent repeating itself or caught in a loop?
+- Is the agent communicating results to the user?
 
 EXAMPLE:
 
