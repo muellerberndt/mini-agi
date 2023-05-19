@@ -10,6 +10,7 @@ import os
 import sys
 import re
 import platform
+from pathlib import Path
 from dotenv import load_dotenv
 from termcolor import colored
 import openai
@@ -356,6 +357,21 @@ if __name__ == "__main__":
 
     if len(sys.argv) != 2:
         print("Usage: miniagi.py <objective>")
+        sys.exit(0)
+    
+    work_dir = os.getenv("WORK_DIR")
+
+    if work_dir is None or not work_dir:
+        work_dir = os.path.join(Path.home(), "miniagi")
+        if not os.path.exists(work_dir):
+            os.makedirs(work_dir)
+
+    print(f"Working directory is {work_dir}")
+
+    try:
+        os.chdir(work_dir)
+    except FileNotFoundError:
+        print("Directory doesn't exist. Set WORK_DIR to an existing directory or leave it blank.")
         sys.exit(0)
 
     miniagi = MiniAGI(
