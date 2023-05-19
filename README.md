@@ -24,7 +24,7 @@ python miniagi.py <objective>
 For example:
 
 ```
-% python miniagi.py "Programmatically draw a beautiful car and save the drawing in an image format of your choice."
+python miniagi.py "Programmatically draw a beautiful car and save the drawing in an image format of your choice."
 ```
 
 ### Enabling the critic
@@ -56,7 +56,7 @@ Objective achieved.
 #### Create a website and serve it
 
 ```
-% python miniagi.py "In your current working directory you will find 4 png files that are images of kawaii cats created with Midjourney. Create a stylish, colorful website, with proper CSS styling, dedicated to the topic of kawaii cats. Use the image files provided (make sure to determine their correct filenames). Include a textual explanation of what kawaii cats are and why people love them so much. Serve the website on a local webserver."
+python miniagi.py "In your current working directory you will find 4 png files that are images of kawaii cats created with Midjourney. Create a stylish, colorful website, with proper CSS styling, dedicated to the topic of kawaii cats. Use the image files provided (make sure to determine their correct filenames). Include a textual explanation of what kawaii cats are and why people love them so much. Serve the website on a local webserver."
 
 MiniAGI: First, I need to list the png files in the current working directory.
 Cmd: execute_shell, Arg: "ls *.png"
