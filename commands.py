@@ -6,7 +6,7 @@ import subprocess
 from io import StringIO
 from contextlib import redirect_stdout
 from urllib.request import urlopen
-from duckduckgo_search import ddg
+from duckduckgo_search import DDGS
 from bs4 import BeautifulSoup
 
 # pylint: disable=broad-exception-caught, exec-used, unspecified-encoding
@@ -109,7 +109,11 @@ class Commands:
         Returns:
             str: The search results.
         """
-        return str(ddg(arg, max_results=5))
+        ddgs = DDGS()
+
+        ddgs_text_gen = ddgs.text(arg)
+
+        return str(list(ddgs_text_gen)[:5])
 
     @staticmethod
     def web_scrape(arg: str) -> str:

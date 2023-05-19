@@ -358,7 +358,7 @@ if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: miniagi.py <objective>")
         sys.exit(0)
-    
+
     work_dir = os.getenv("WORK_DIR")
 
     if work_dir is None or not work_dir:
