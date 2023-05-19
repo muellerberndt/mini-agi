@@ -4,7 +4,7 @@ with a user and performs tasks, with support for real-time monitoring of its act
 its performance, and retaining memory of actions.
 """
 
-# pylint: disable=invalid-name, too-many-arguments, too-many-instance-attributes, import-error
+# pylint: disable=invalid-name, too-many-arguments, too-many-instance-attributes
 
 import os
 import sys
