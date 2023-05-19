@@ -399,6 +399,9 @@ if __name__ == "__main__":
 
         print(colored(f"MiniAGI: {thought}\nCmd: {command}, Arg: {arg}", "cyan"))
 
+        if command == "done":
+            sys.exit(0)
+
         if command == "memorize_thoughts":
             print(colored("MiniAGI is thinking:\n"\
                 f"{miniagi.proposed_arg}", 'cyan'))
