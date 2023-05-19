@@ -23,10 +23,6 @@ from exceptions import InvalidLLMResponseError
 
 operating_system = platform.platform()
 
-
-load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
 PROMPT = f"You are an autonomous agent running on {operating_system}." + '''
 OBJECTIVE: {objective} (e.g. "Find a recipe for chocolate chip cookies")
 
@@ -91,22 +87,23 @@ with open('hello_world.txt', 'w') as f:
 
 CRITIC_PROMPT = '''
 You are a critic reviewing the actions of an autonomous agent.
-Evaluate the agent's performance.
-Make concise suggestions for improvements, if any.
+
+Evaluate the agent's performance. It should:
+- Make real-world progress towards the objective
+- Take action instead of endlessly talking to itself
+- Not perform redundant or unnecessary actions
+- Not attempt actions that cannot work (e.g. watching a video)
+- Not keep repeating the same command
+- Communicate results to the user
+
+Make concise suggestions for improvements.
 Provide recommended next steps.
 Keep your response as short as possible.
 
-Consider:
-- Is agent taking reasonable steps to achieve the objective?
-- Is agent making actual real-world progress towards the objective?
-- Is the agent taking redundant or unnecessary steps?
-- Is agent repeating itself or caught in a loop?
-- Is the agent communicating results to the user?
-
 EXAMPLE:
 
-Criticism: The agent has been pretending to order pizza but has not actually
-taken any real-world action. The agent should course-correct.
+Criticism: You have been pretending to order pizza but have not actually
+taken any real-world action. You should course-correct.
 
 Recommended next steps:
 
@@ -123,13 +120,14 @@ AGENT HISTORY:
 
 '''
 
-OBSERVATION_SUMMARY_HINT = "You are summarizing the observation of an autonomous agent."\
-    "Include information that the agent might need to fulfill its objective: '{objective}'"\
+OBSERVATION_SUMMARY_HINT = "You are an autonomous agent summarizing your observation."\
+    "Retain the information you need to fulfill your objective: '{objective}'"\
     "Use short sentences and abbrevations."
 
-HISTORY_SUMMARY_HINT = "Generate a new summary given the previous summary of the agent's "\
-    "history and its latest action. Include a list of all previous actions. Keep it short."\
-    "Compress sentences using abbreviations."
+HISTORY_SUMMARY_HINT = "You are an autonomous agent summarizing your history."\
+    "Generate a new summary given the previous summary of your "\
+    "history and your latest action. Include a list of all previous actions. Keep it short."\
+    "Use short sentences and abbrevations."
 
 class MiniAGI:
     """
@@ -352,6 +350,9 @@ def get_bool_env(env_var: str) -> bool:
     '''
     return os.getenv(env_var) in ['true', '1', 't', 'y', 'yes']
 
+
+load_dotenv()
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 if __name__ == "__main__":
 
