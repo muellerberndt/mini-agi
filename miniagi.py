@@ -122,11 +122,13 @@ AGENT HISTORY:
 
 '''
 
-SUMMARY_HINT = "Retain information necessary for the agent to perform its task."\
-    "Use short sentences and abbreviations."
-EXTRA_SUMMARY_HINT = "Consider the agent's objective: '{summarizer_hint}' when"\
-    " evaluating what information to include."
+OBSERVATION_SUMMARY_HINT = "You are summarizing the observation of an autonomous agent."\
+    "Include information that the agent might need to fulfill its objective: '{objective}'"\
+    "Use short sentences and abbrevations."
 
+HISTORY_SUMMARY_HINT = "Generate a new summary given the previous summary of the agent's "\
+    "history and its latest action. Include a list of all previous actions. Keep it short."\
+    "Compress sentences using abbreviations."
 
 class MiniAGI:
     """
@@ -214,15 +216,19 @@ class MiniAGI:
             summary of the agent's history.
         """
 
+        if len(self.encoding.encode(observation)) > self.max_memory_item_size:
+            observation = self.summarizer.chunked_summarize(
+                observation, self.max_memory_item_size,
+                instruction_hint=OBSERVATION_SUMMARY_HINT.format(objective=self.objective)
+                )
+
         new_memory = f"ACTION\n{action}\nRESULT:\n{observation}\n"
 
         if update_summary:
             self.summarized_history = self.summarizer.summarize(
                 f"Current summary:\n{self.summarized_history}\nAdd to summary:\n{new_memory}",
                 self.max_memory_item_size,
-                instruction_hint="Generate a new summary given the previous summary"\
-                    "of the agent's history and its last action. Maintain the entire history."\
-                    " Keep it short. Compress the summary using abbreviations."
+                instruction_hint=HISTORY_SUMMARY_HINT
                 )
 
         self.agent.memorize(new_memory)
