@@ -223,7 +223,10 @@ class MiniAGI:
                 instruction_hint=OBSERVATION_SUMMARY_HINT.format(objective=self.objective)
                 )
 
-        new_memory = f"ACTION\n{action}\nRESULT:\n{observation}\n"
+        if "memorize_thoughts" in action:
+            new_memory = f"THOUGHTS:\n{observation}\n"
+        else:
+            new_memory = f"ACTION\n{action}\nRESULT:\n{observation}\n"
 
         if update_summary:
             self.summarized_history = self.summarizer.summarize(
