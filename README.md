@@ -4,7 +4,7 @@
 	<img src="/static/mini-agi-cover.png" height="320px"/>
 </p>
 
-MiniAGI is a simple autonomous agent compatible with GPT-3.5-Turbo and GPT-4. It combines a robust prompt with a minimal set of tools, chain-of-thoughts, and short-term memory with summarization. The agent is also capable of inner monologue and self-critcism.
+MiniAGI is a simple autonomous agent compatible with GPT-3.5-Turbo and GPT-4. It combines a robust prompt with a minimal set of tools, chain-of-thoughts, and short-term memory with summarization. It is also capable of inner monologue and self-criticism.
 
 ## Installation
 
