@@ -9,7 +9,7 @@ from urllib.request import urlopen
 from duckduckgo_search import DDGS
 from bs4 import BeautifulSoup
 
-# pylint: disable=broad-exception-caught, exec-used, unspecified-encoding
+# pylint: disable=broad-exception-caught, exec-used, unspecified-encoding, import-error
 
 class Commands:
     """
