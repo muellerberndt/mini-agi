@@ -40,8 +40,8 @@ command | argument
 memorize_thoughts | internal debate, refinement, planning
 execute_python | python code (multiline)
 execute_shell | shell command (non-interactive, single line)
-gpt_process_file | prompt||single local input file
-gpt_process_url | prompt||single input url
+process_data_from_file | data processing prompt||single local input file
+process_data_from_url | data processing prompt||single input url
 web_search | keywords
 talk_to_user | what to say
 done | none
@@ -52,8 +52,9 @@ The mandatory action format is:
 [ARGUMENT]
 
 Python code run with execute_python must end with an output "print" statement.
+process_data_from_url and process_data_from_file take a single argument.
 Use your existing knowledge rather then web search when possible.
-Use memorize_thoughts to organize your thoughts (to be stored in memory)
+Use memorize_thoughts to organize your thoughts.
 memorize_thoughts argument must not be empty!
 Send the "done" command if the objective was achieved.
 RESPOND WITH EXACTLY ONE THOUGHT/COMMAND/ARG COMBINATION.
@@ -72,11 +73,14 @@ I have experience in data entry and analysis, as well as social media management
 <r>Search for websites with chocolate chip cookies recipe.</r><c>web_search</c>
 chocolate chip cookies recipe
 
-<r>Scrape information about chocolate chip cookies from the given URL.</r><c>gpt_process_url</c>
-Extract the chocolate cookie recipe from this text||https://example.com/chocolate-chip-cookies
+<r>Scrape information about chocolate chip cookies from the given URL.</r><c>process_data_from_url</c>
+Extract the chocolate cookie recipe||https://example.com/chocolate-chip-cookies
 
-<r>Review the source code for security issues.</r><c>gpt_process_file</c>
-List security issues in this source code||/path/to/code.sol
+<r>Summarize the Stackoverflow article.</r><c>process_data_from_url</c>
+Get a summary of the text||https://stackoverflow.com/questions/1234/how-to-improve-my-chatgpt-prompts
+
+<r>Review the source code for security issues.</r><c>process_data_from_file</c>
+Return a list of security vulnerabilities in this code||/path/to/code.sol
 
 <r>I need to ask the user for guidance.</r><c>talk_to_user</c>
 What is the URL of a website with chocolate chip cookies recipes?
@@ -340,8 +344,8 @@ class MiniAGI:
         """
         (prompt, __arg) = _arg.split("||")
 
-        RETRIEVAL_PROMPT = "You will be asked to process an URL or file. You do not"\
-            " have to access the URL of file yourself, it will be loaded on your behalf"\
+        RETRIEVAL_PROMPT = "You will be asked to process data from an URL or file. You do not"\
+            " need to access the URL of file yourself, it will be loaded on your behalf"\
             " and included as 'INPUT_DATA'."
 
         print(f"PROMPT:{prompt}\nARG:{__arg})")
@@ -367,6 +371,12 @@ class MiniAGI:
 
         print("INPUT DATA: " + input_data)
 
+        if len(self.encoding.encode(input_data)) > self.max_context_size:
+            input_data = self.summarizer.chunked_summarize(
+                input_data, self.max_context_size,
+                instruction_hint=OBSERVATION_SUMMARY_HINT.format(objective=prompt)
+                )
+
         return self.agent.predict(
                 prompt=f"{RETRIEVAL_PROMPT}\n{prompt}\nINPUT DATA:\n{input_data}"
             )
@@ -375,9 +385,9 @@ class MiniAGI:
         """
         Executes the command proposed by the agent and updates the agent's memory.
         """
-        if command == "gpt_process_file":
+        if command == "process_data_from_file":
             obs = self.__prompt_with_data("file", self.proposed_arg)
-        elif command == "gpt_process_url":
+        elif command == "process_data_from_url":
             obs = self.__prompt_with_data("url", self.proposed_arg)
         else:
             obs = Commands.execute_command(self.proposed_command, self.proposed_arg)
