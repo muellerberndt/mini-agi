@@ -348,8 +348,6 @@ class MiniAGI:
         """
         (prompt, __arg) = _arg.split("||")
 
-        print(f"PROMPT:{prompt}\nARG:{__arg})")
-
         if _type == "file":
             with open(__arg, "r") as file:
                 input_data = file.read()
