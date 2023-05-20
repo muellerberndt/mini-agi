@@ -127,6 +127,10 @@ AGENT HISTORY:
 
 '''
 
+RETRIEVAL_PROMPT = "You will be asked to process data from a URL or file. You do not"\
+    " need to access the URL of file yourself, it will be loaded on your behalf"\
+    " and included as 'INPUT_DATA'."
+
 OBSERVATION_SUMMARY_HINT = "You are an autonomous agent summarizing your observation."\
     "Retain the information you need to fulfill your objective: '{objective}'"\
     "Use short sentences and abbrevations."
@@ -333,7 +337,7 @@ class MiniAGI:
 
     def __prompt_with_data(self, _type:str, _arg:str) -> str:
         """
-        Executes the command proposed by the agent and updates the agent's memory.
+        Processes data from a URL or file.
 
         Args:
             type (str): Data type ("url" or "file")
@@ -344,21 +348,12 @@ class MiniAGI:
         """
         (prompt, __arg) = _arg.split("||")
 
-        RETRIEVAL_PROMPT = "You will be asked to process data from an URL or file. You do not"\
-            " need to access the URL of file yourself, it will be loaded on your behalf"\
-            " and included as 'INPUT_DATA'."
-
         print(f"PROMPT:{prompt}\nARG:{__arg})")
 
         if _type == "file":
             with open(__arg, "r") as file:
                 input_data = file.read()
         elif _type == "url":
-
-            # pattern = re.compile("url|link|website", re.IGNORECASE)
-            # prompt = pattern.sub("text", prompt)
-
-            # print(f"FIXED PROMPT: {prompt}")
 
             with urlopen(__arg) as response:
                 html = response.read()
@@ -368,8 +363,6 @@ class MiniAGI:
                 ).get_text()
         else:
             return "Unsupported argument"
-
-        print("INPUT DATA: " + input_data)
 
         if len(self.encoding.encode(input_data)) > self.max_context_size:
             input_data = self.summarizer.chunked_summarize(
