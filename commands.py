@@ -5,9 +5,8 @@ This module offers a collection of static methods that can execute different com
 import subprocess
 from io import StringIO
 from contextlib import redirect_stdout
-from urllib.request import urlopen
 from duckduckgo_search import DDGS
-from bs4 import BeautifulSoup
+
 
 # pylint: disable=broad-exception-caught, exec-used, unspecified-encoding
 
@@ -39,10 +38,6 @@ class Commands:
                     result = Commands.execute_shell(arg)
                 case "web_search":
                     result = Commands.web_search(arg)
-                case "web_scrape":
-                    result = Commands.web_scrape(arg)
-                case "read_file":
-                    result = Commands.read_file(arg)
                 case _:
                     result = f"Unknown command: {command}"
         except Exception as exception:
@@ -126,12 +121,7 @@ class Commands:
         Returns:
             str: The text content of the webpage.
         """
-        with urlopen(arg) as response:
-            html = response.read()
-        return BeautifulSoup(
-                html,
-                features="lxml"
-            ).get_text()
+
 
     @staticmethod
     def read_file(arg: str) -> str:

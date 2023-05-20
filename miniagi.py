@@ -4,18 +4,20 @@ with a user and performs tasks, with support for real-time monitoring of its act
 its performance, and retaining memory of actions.
 """
 
-# pylint: disable=invalid-name, too-many-arguments, too-many-instance-attributes
+# pylint: disable=invalid-name, too-many-arguments, too-many-instance-attributes, unspecified-encoding
 
 import os
 import sys
 import re
 import platform
 from pathlib import Path
+from urllib.request import urlopen
 from dotenv import load_dotenv
 from termcolor import colored
 import openai
 from thinkgpt.llm import ThinkGPT
 import tiktoken
+from bs4 import BeautifulSoup
 from spinner import Spinner
 from commands import Commands
 from exceptions import InvalidLLMResponseError
@@ -38,9 +40,9 @@ command | argument
 memorize_thoughts | internal debate, refinement, planning
 execute_python | python code (multiline)
 execute_shell | shell command (non-interactive, single line)
-read_file | filename of local file
+gpt_process_file | prompt||single local input file
+gpt_process_url | prompt||single input url
 web_search | keywords
-web_scrape | single url
 talk_to_user | what to say
 done | none
 
@@ -54,7 +56,6 @@ Use your existing knowledge rather then web search when possible.
 Use memorize_thoughts to organize your thoughts (to be stored in memory)
 memorize_thoughts argument must not be empty!
 Send the "done" command if the objective was achieved.
-Your short-term memory is limited! Use temp files to deal with large amounts of data.
 RESPOND WITH EXACTLY ONE THOUGHT/COMMAND/ARG COMBINATION.
 DO NOT CHAIN MULTIPLE COMMANDS.
 NO EXTRA TEXT BEFORE OR AFTER THE COMMAND.
@@ -66,14 +67,16 @@ Example actions:
 
 <r>Think about skills and interests that could be turned into an online job.</r><c>memorize_thoughts</c>
 I have experience in data entry and analysis, as well as social media management.
-I am also interested in graphic design and have some basic coding skills.
 (...)
 
 <r>Search for websites with chocolate chip cookies recipe.</r><c>web_search</c>
 chocolate chip cookies recipe
 
-<r>Scrape information about chocolate chip cookies from the given URL.</r><c>web_scrape</c>
-https://example.com/chocolate-chip-cookies
+<r>Scrape information about chocolate chip cookies from the given URL.</r><c>gpt_process_url</c>
+Extract the chocolate cookie recipe from this text||https://example.com/chocolate-chip-cookies
+
+<r>Review the source code for security issues.</r><c>gpt_process_file</c>
+List security issues in this source code||/path/to/code.sol
 
 <r>I need to ask the user for guidance.</r><c>talk_to_user</c>
 What is the URL of a website with chocolate chip cookies recipes?
@@ -324,11 +327,60 @@ class MiniAGI:
             _arg
         )
 
+    def __prompt_with_data(self, _type:str, _arg:str) -> str:
+        """
+        Executes the command proposed by the agent and updates the agent's memory.
+
+        Args:
+            type (str): Data type ("url" or "file")
+            arg (str): The URL or filename
+
+        Returns:
+            str: Observation: The result of processing the URL or file.
+        """
+        (prompt, __arg) = _arg.split("||")
+
+        RETRIEVAL_PROMPT = "You will be asked to process an URL or file. You do not"\
+            " have to access the URL of file yourself, it will be loaded on your behalf"\
+            " and included as 'INPUT_DATA'."
+
+        print(f"PROMPT:{prompt}\nARG:{__arg})")
+
+        if _type == "file":
+            with open(__arg, "r") as file:
+                input_data = file.read()
+        elif _type == "url":
+
+            # pattern = re.compile("url|link|website", re.IGNORECASE)
+            # prompt = pattern.sub("text", prompt)
+
+            # print(f"FIXED PROMPT: {prompt}")
+
+            with urlopen(__arg) as response:
+                html = response.read()
+            input_data = BeautifulSoup(
+                    html,
+                    features="lxml"
+                ).get_text()
+        else:
+            return "Unsupported argument"
+
+        print("INPUT DATA: " + input_data)
+
+        return self.agent.predict(
+                prompt=f"{RETRIEVAL_PROMPT}\n{prompt}\nINPUT DATA:\n{input_data}"
+            )
+
     def act(self):
         """
         Executes the command proposed by the agent and updates the agent's memory.
         """
-        obs = Commands.execute_command(self.proposed_command, self.proposed_arg)
+        if command == "gpt_process_file":
+            obs = self.__prompt_with_data("file", self.proposed_arg)
+        elif command == "gpt_process_url":
+            obs = self.__prompt_with_data("url", self.proposed_arg)
+        else:
+            obs = Commands.execute_command(self.proposed_command, self.proposed_arg)
         self.__update_memory(f"{self.proposed_command}\n{self.proposed_arg}", obs)
         self.criticism = ""
 
