@@ -352,7 +352,7 @@ class MiniAGI:
             try:
                 with open(__arg, "r") as file:
                     input_data = file.read()
-            except FileNotFoundError as e:
+            except OSError as e:
                 return f"Error: {str(e)}"
         elif _type == "url":
 
