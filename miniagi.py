@@ -210,7 +210,7 @@ class MiniAGI:
             action: str,
             observation: str,
             update_summary: bool = True
-        ) -> str:
+        ):
         """
         Updates the agent's memory with the last action performed and its observation.
         Optionally, updates the summary of agent's history as well.
@@ -221,10 +221,6 @@ class MiniAGI:
                 instance after performing the action.
             summary (str): The current summary of the agent's history.
             update_summary (bool, optional): Determines whether to update the summary.
-
-        Returns:
-            str: The updated (or unchanged, depending on 'update_summary' value) 
-            summary of the agent's history.
         """
 
         if len(self.encoding.encode(observation)) > self.max_memory_item_size:
