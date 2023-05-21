@@ -40,8 +40,8 @@ command | argument
 memorize_thoughts | internal debate, refinement, planning
 execute_python | python code (multiline)
 execute_shell | shell command (non-interactive, single line)
-process_data_from_file | data processing prompt||single local input file
-process_data_from_url | data processing prompt||single input url
+process_data_file | data processing prompt||single local input file
+process_data_url | data processing prompt||single input url
 web_search | keywords
 talk_to_user | what to say
 done | none
@@ -73,14 +73,14 @@ I have experience in data entry and analysis, as well as social media management
 <r>Search for websites with chocolate chip cookies recipe.</r><c>web_search</c>
 chocolate chip cookies recipe
 
-<r>Scrape information about chocolate chip cookies from the given URL.</r><c>process_data_from_url</c>
+<r>Extract information about chocolate chip cookies from the given URL.</r><c>process_data_url</c>
 Extract the chocolate cookie recipe||https://example.com/chocolate-chip-cookies
 
-<r>Summarize the Stackoverflow article.</r><c>process_data_from_url</c>
+<r>Summarize the Stackoverflow article about ChatGPT prompts.</r><c>process_data_url</c>
 Get a summary of the text||https://stackoverflow.com/questions/1234/how-to-improve-my-chatgpt-prompts
 
-<r>Review the source code for security issues.</r><c>process_data_from_file</c>
-Return a list of security vulnerabilities in this code||/path/to/code.sol
+<r>Review the source code for security issues.</r><c>process_data_file</c>
+Review this code for security vulnerabilities||/path/to/code.sol
 
 <r>I need to ask the user for guidance.</r><c>talk_to_user</c>
 What is the URL of a website with chocolate chip cookies recipes?
@@ -131,9 +131,10 @@ RETRIEVAL_PROMPT = "You will be asked to process data from a URL or file. You do
     " need to access the URL of file yourself, it will be loaded on your behalf"\
     " and included as 'INPUT_DATA'."
 
-OBSERVATION_SUMMARY_HINT = "You are an autonomous agent summarizing your observation."\
-    "Retain the information you need to fulfill your objective: '{objective}'"\
-    "Use short sentences and abbrevations."
+OBSERVATION_SUMMARY_HINT = "Summarize the last observation of an automomous agent."\
+    " The agent's objective is: '{objective}'. Do not include the objective in the summary,"\
+    " but try to retain information the agent might need to complete the objective."\
+    " Use short sentences and abbrevations."
 
 HISTORY_SUMMARY_HINT = "You are an autonomous agent summarizing your history."\
     "Generate a new summary given the previous summary of your "\
@@ -376,9 +377,9 @@ class MiniAGI:
         """
         Executes the command proposed by the agent and updates the agent's memory.
         """
-        if command == "process_data_from_file":
+        if command == "process_data_file":
             obs = self.__prompt_with_data("file", self.proposed_arg)
-        elif command == "process_data_from_url":
+        elif command == "process_data_url":
             obs = self.__prompt_with_data("url", self.proposed_arg)
         else:
             obs = Commands.execute_command(self.proposed_command, self.proposed_arg)
