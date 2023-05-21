@@ -131,9 +131,7 @@ RETRIEVAL_PROMPT = "You will be asked to process data from a URL or file. You do
     " need to access the URL of file yourself, it will be loaded on your behalf"\
     " and included as 'INPUT_DATA'."
 
-OBSERVATION_SUMMARY_HINT = "Summarize the last observation of an automomous agent."\
-    " The agent's objective is: '{objective}'. Do not include the objective in the summary,"\
-    " but try to retain information the agent might need to complete the objective."\
+OBSERVATION_SUMMARY_HINT = "You are automomous agent summarizing your last observation."\
     " Use short sentences and abbrevations."
 
 HISTORY_SUMMARY_HINT = "You are an autonomous agent summarizing your history."\
@@ -230,7 +228,7 @@ class MiniAGI:
         if len(self.encoding.encode(observation)) > self.max_memory_item_size:
             observation = self.summarizer.chunked_summarize(
                 observation, self.max_memory_item_size,
-                instruction_hint=OBSERVATION_SUMMARY_HINT.format(objective=self.objective)
+                instruction_hint=OBSERVATION_SUMMARY_HINT
                 )
 
         if "memorize_thoughts" in action:
@@ -366,7 +364,7 @@ class MiniAGI:
         if len(self.encoding.encode(input_data)) > self.max_context_size:
             input_data = self.summarizer.chunked_summarize(
                 input_data, self.max_context_size,
-                instruction_hint=OBSERVATION_SUMMARY_HINT.format(objective=prompt)
+                instruction_hint=OBSERVATION_SUMMARY_HINT
                 )
 
         return self.agent.predict(
