@@ -41,8 +41,8 @@ command | argument
 memorize_thoughts | internal debate, refinement, planning
 execute_python | python code (multiline)
 execute_shell | shell command (non-interactive, single line)
-process_data_file | data processing prompt||a single local input file
-process_data_url | data processing prompt||a single input url
+process_one_file | data processing prompt||local input file
+process_one_url | data processing prompt||input url
 web_search | keywords
 talk_to_user | what to say
 done | none
@@ -52,8 +52,9 @@ The mandatory action format is:
 <r>[YOUR_REASONING]</r><c>[COMMAND]</c>
 [ARGUMENT]
 
+process_one_file cannot process multiple files. Process 1 at a time.
+process_one_url cannot process multiple urls. Process 1 at a time.
 Python code run with execute_python must end with an output "print" statement.
-process_data commands only work with one file or URL at a time.
 Do not search the web for information that GPT3/GPT4 already knows.
 Use memorize_thoughts to organize your thoughts.
 memorize_thoughts argument must not be empty!
@@ -74,13 +75,13 @@ I have experience in data entry and analysis, as well as social media management
 <r>Search for websites with chocolate chip cookies recipe.</r><c>web_search</c>
 chocolate chip cookies recipe
 
-<r>Extract information about chocolate chip cookies from the given URL.</r><c>process_data_url</c>
+<r>Extract information about chocolate chip cookies from the given URL.</r><c>process_one_url</c>
 Extract the chocolate cookie recipe||https://example.com/chocolate-chip-cookies
 
-<r>Summarize the Stackoverflow article about ChatGPT prompts.</r><c>process_data_url</c>
+<r>Summarize the Stackoverflow article about ChatGPT prompts.</r><c>process_one_url</c>
 Get a summary of the text||https://stackoverflow.com/questions/1234/how-to-improve-my-chatgpt-prompts
 
-<r>Review the source code for security issues.</r><c>process_data_file</c>
+<r>Review the source code for security issues.</r><c>process_one_file</c>
 Review this code for security vulnerabilities||/path/to/code.sol
 
 <r>I need to ask the user for guidance.</r><c>talk_to_user</c>
@@ -346,7 +347,12 @@ class MiniAGI:
         Returns:
             str: Observation: The result of processing the URL or file.
         """
-        (prompt, __arg) = _arg.split("||")
+        args = _arg.split("||")
+
+        if len(args) > 2:
+            return "Cannot process multiple input files or URLs. Process one at a time."
+
+        (prompt, __arg) = args
 
         if _type == "file":
             try:
@@ -383,9 +389,9 @@ class MiniAGI:
         """
         Executes the command proposed by the agent and updates the agent's memory.
         """
-        if command == "process_data_file":
+        if command == "process_one_file":
             obs = self.__prompt_with_data("file", self.proposed_arg)
-        elif command == "process_data_url":
+        elif command == "process_one_url":
             obs = self.__prompt_with_data("url", self.proposed_arg)
         else:
             obs = Commands.execute_command(self.proposed_command, self.proposed_arg)
