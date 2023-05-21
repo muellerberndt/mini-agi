@@ -41,8 +41,8 @@ command | argument
 memorize_thoughts | internal debate, refinement, planning
 execute_python | python code (multiline)
 execute_shell | shell command (non-interactive, single line)
-process_data_file | data processing prompt||single local input file
-process_data_url | data processing prompt||single input url
+process_data_file | data processing prompt||a single local input file
+process_data_url | data processing prompt||a single input url
 web_search | keywords
 talk_to_user | what to say
 done | none
@@ -53,7 +53,7 @@ The mandatory action format is:
 [ARGUMENT]
 
 Python code run with execute_python must end with an output "print" statement.
-process_data_from_url and process_data_from_file take a single argument.
+process_data commands only work with one file or URL at a time.
 Do not search the web for information that GPT3/GPT4 already knows.
 Use memorize_thoughts to organize your thoughts.
 memorize_thoughts argument must not be empty!
