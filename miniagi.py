@@ -130,7 +130,7 @@ AGENT HISTORY:
 '''
 
 RETRIEVAL_PROMPT = "You will be asked to process data from a URL or file. You do not"\
-    " need to access the URL of file yourself, it will be loaded on your behalf"\
+    " need to access the URL or file yourself, it will be loaded on your behalf"\
     " and included as 'INPUT_DATA'."
 
 OBSERVATION_SUMMARY_HINT = "You are automomous agent summarizing your last observation."\
