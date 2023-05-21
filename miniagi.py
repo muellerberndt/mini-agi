@@ -269,9 +269,11 @@ class MiniAGI:
         return f"SUMMARY\n{self.summarized_history}\nPREV ACTIONS:"\
             f"\n{action_buffer}\n{self.criticism}"
 
-    def criticize(self):
+    def criticize(self) -> str:
         """
         Criticizes the agent's actions.
+        Returns:
+            str: The criticism.
         """
 
         context = self.__get_context()
@@ -279,6 +281,8 @@ class MiniAGI:
         self.criticism = self.agent.predict(
                 prompt=CRITIC_PROMPT.format(context=context, objective=self.objective)
             )
+
+        return self.criticism
 
     def think(self):
         """
@@ -465,24 +469,18 @@ if __name__ == "__main__":
         if command == "done":
             sys.exit(0)
 
-        if command == "memorize_thoughts":
-            print(colored("MiniAGI is thinking:\n"\
-                f"{miniagi.proposed_arg}", 'cyan'))
-            with Spinner():
-                miniagi.act()
-                if ENABLE_CRITIC:
-                    miniagi.criticize()
-            continue
-
         if command == "talk_to_user":
-            print(colored(f"MiniAGI: {miniagi.proposed_arg}", 'cyan'))
+            print(colored(f"MiniAGI: {miniagi.proposed_arg}", 'blue'))
             user_input = input('Your response: ')
             with Spinner():
                 miniagi.user_response(user_input)
             continue
 
-        if PROMPT_USER:
-            user_input = input('Press enter to perform this action or abort by typing feedback: ')
+        if command == "memorize_thoughts":
+            print(colored("MiniAGI is thinking:\n"\
+                f"{miniagi.proposed_arg}", 'cyan'))
+        elif PROMPT_USER:
+            user_input = input('Press enter to continue or abort this action by typing feedback: ')
 
             if len(user_input) > 0:
                 with Spinner():
@@ -491,5 +489,9 @@ if __name__ == "__main__":
 
         with Spinner():
             miniagi.act()
-            if ENABLE_CRITIC:
-                miniagi.criticize()
+
+        if ENABLE_CRITIC:
+            with Spinner():
+                criticism = miniagi.criticize()
+
+            print(colored(criticism, "light_magenta"))
