@@ -10,6 +10,7 @@ import os
 import sys
 import re
 import platform
+import urllib
 from pathlib import Path
 from urllib.request import urlopen
 from dotenv import load_dotenv
@@ -53,7 +54,7 @@ The mandatory action format is:
 
 Python code run with execute_python must end with an output "print" statement.
 process_data_from_url and process_data_from_file take a single argument.
-Use your existing knowledge rather then web search when possible.
+Do not search the web for information that GPT3/GPT4 already knows.
 Use memorize_thoughts to organize your thoughts.
 memorize_thoughts argument must not be empty!
 Send the "done" command if the objective was achieved.
@@ -348,16 +349,23 @@ class MiniAGI:
         (prompt, __arg) = _arg.split("||")
 
         if _type == "file":
-            with open(__arg, "r") as file:
-                input_data = file.read()
+            try:
+                with open(__arg, "r") as file:
+                    input_data = file.read()
+            except FileNotFoundError as e:
+                return f"Error: {str(e)}"
         elif _type == "url":
 
-            with urlopen(__arg) as response:
-                html = response.read()
-            input_data = BeautifulSoup(
-                    html,
-                    features="lxml"
-                ).get_text()
+            try:
+                with urlopen(__arg) as response:
+                    html = response.read()
+                input_data = BeautifulSoup(
+                        html,
+                        features="lxml"
+                    ).get_text()
+            except urllib.error.URLError as e:
+                return f"Error: {str(e)}"
+
         else:
             return "Unsupported argument"
 
