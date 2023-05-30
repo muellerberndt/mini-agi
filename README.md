@@ -15,6 +15,8 @@ pip install -r requirements.txt
 cp .env_example .env
 ```
 
+Note that Python 3.10 or higher is required.
+
 ## Usage
 
 ```
