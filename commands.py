@@ -109,31 +109,3 @@ class Commands:
         ddgs_text_gen = ddgs.text(arg)
 
         return str(list(ddgs_text_gen)[:5])
-
-    @staticmethod
-    def web_scrape(arg: str) -> str:
-        """
-        Scrapes a webpage and returns the text of the page.
-
-        Args:
-            arg (str): The URL of the webpage to be scraped.
-
-        Returns:
-            str: The text content of the webpage.
-        """
-
-
-    @staticmethod
-    def read_file(arg: str) -> str:
-        """
-        Reads a file and returns its content.
-
-        Args:
-            arg (str): The path of the file.
-
-        Returns:
-            str: The content of the file.
-        """
-
-        with open(arg, "r") as file:
-            return file.read()
