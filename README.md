@@ -37,6 +37,21 @@ The critic may improve accuracy of the agent at the cost of additional API reque
 
 - [Docs for advanced users](docs/Advanced.md)
 
+### Web search providers
+
+DuckDuckGo remains the default for `web_search`. To use
+[Parallel Search MCP](https://docs.parallel.ai/integrations/mcp/search-mcp), set
+`SEARCH_PROVIDER=parallel` in `.env`. It provides free web search with source URLs
+and excerpts, powered by Fast mode, without a Parallel account or API key. No
+additional dependencies are needed. Queries are sent to Parallel; free usage is
+rate limited. Provider errors are returned to the agent without switching providers.
+
+Set `SEARCH_PROVIDER=duckduckgo` to select DuckDuckGo explicitly, or
+`SEARCH_PROVIDER=none` to disable the `web_search` command. The existing
+`PROMPT_USER` confirmation still applies. Parallel requests have a 30-second
+socket timeout; Ctrl-C interrupts a request. URL ingestion still uses MiniAGI's
+existing `ingest_data` and `process_data` commands.
+
 **Safety and privacy advisory: The agent may inadvertently suggest harmful commands or code. Proceed with caution and use at your own discretion. Be aware that, depending on your settings and requirements, the agent might share your data with third-party API providers such as OpenAI.**
 
 ### Examples

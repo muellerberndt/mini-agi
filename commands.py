@@ -2,10 +2,12 @@
 This module offers a collection of static methods that can execute different commands.
 """
 
+import os
 import subprocess
 from io import StringIO
 from contextlib import redirect_stdout
 from duckduckgo_search import DDGS
+from parallel_search import search as parallel_search
 
 
 # pylint: disable=broad-exception-caught, exec-used, unspecified-encoding
@@ -16,13 +18,15 @@ class Commands:
     """
 
     @staticmethod
-    def execute_command(command, arg) -> str:
+    def execute_command(command, arg, search_provider=None, search_session_id=None) -> str:
         """
         Executes the command corresponding to the provided command string.
 
         Args:
             command (str): The command string representing the command to be executed.
             arg (str): The argument to be passed to the command.
+            search_provider (str, optional): Provider override for web_search.
+            search_session_id (str, optional): Research identity for related searches.
 
         Returns:
             str: The result of the command execution, or an error 
@@ -37,7 +41,7 @@ class Commands:
                 case "execute_shell":
                     result = Commands.execute_shell(arg)
                 case "web_search":
-                    result = Commands.web_search(arg)
+                    result = Commands.web_search(arg, search_provider, search_session_id)
                 case _:
                     result = f"Unknown command: {command}"
         except Exception as exception:
@@ -94,16 +98,28 @@ class Commands:
         return f"STDOUT:\n{stdout}\nSTDERR:\n{stderr}"
 
     @staticmethod
-    def web_search(arg: str) -> str:
+    def web_search(arg: str, provider=None, session_id=None) -> str:
         """
-        Searches the web using DuckDuckGo and returns the results.
+        Searches with the selected provider; DuckDuckGo remains the default.
 
         Args:
             arg (str): The search query.
+            provider (str, optional): Override SEARCH_PROVIDER without changing the environment.
+            session_id (str, optional): Research identity shared by one agent objective.
 
         Returns:
             str: The search results.
         """
+        if provider is None:
+            provider = os.getenv("SEARCH_PROVIDER", "duckduckgo")
+        provider = provider.strip().lower()
+        if provider == "none":
+            return "Web search is disabled (SEARCH_PROVIDER=none)."
+        if provider == "parallel":
+            return parallel_search(arg, session_id)
+        if provider != "duckduckgo":
+            raise ValueError("SEARCH_PROVIDER must be duckduckgo, parallel, or none")
+
         ddgs = DDGS()
 
         ddgs_text_gen = ddgs.text(arg)
