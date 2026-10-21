@@ -13,6 +13,7 @@ import platform
 import urllib
 from pathlib import Path
 from urllib.request import urlopen
+from uuid import uuid4
 from dotenv import load_dotenv
 from termcolor import colored
 import openai
@@ -172,7 +173,8 @@ class MiniAGI:
         objective: str,
         max_context_size: int,
         max_memory_item_size: int,
-        debug: bool = False
+        debug: bool = False,
+        search_provider: str = None
         ):
         """
         Constructs a `MiniAGI` instance.
@@ -184,6 +186,7 @@ class MiniAGI:
             max_context_size (int): The maximum context size in tokens for the agent's memory.
             max_memory_item_size (int): The maximum size of a memory item in tokens.
             debug (bool, optional): A flag to indicate whether to print debug information.
+            search_provider (str, optional): Override SEARCH_PROVIDER for this objective.
         """
 
         self.agent = ThinkGPT(
@@ -201,6 +204,10 @@ class MiniAGI:
         self.max_context_size = max_context_size
         self.max_memory_item_size = max_memory_item_size
         self.debug = debug
+        self.search_provider = search_provider if search_provider is not None \
+            else os.getenv("SEARCH_PROVIDER", "duckduckgo")
+        # One opaque research identity per agent objective, independent of MCP connections.
+        self.search_session_id = str(uuid4())
 
         self.summarized_history = ""
         self.criticism = ""
@@ -433,12 +440,13 @@ class MiniAGI:
         """
         Executes the command proposed by the agent and updates the agent's memory.
         """
-        if command == "process_data":
+        if self.proposed_command == "process_data":
             obs = self.__process_data(self.proposed_arg)
-        elif command == "ingest_data":
+        elif self.proposed_command == "ingest_data":
             obs = self.__ingest_data(self.proposed_arg)
         else:
-            obs = Commands.execute_command(self.proposed_command, self.proposed_arg)
+            obs = Commands.execute_command(self.proposed_command, self.proposed_arg,
+                                           self.search_provider, self.search_session_id)
 
         self.__update_memory(f"{self.proposed_command}\n{self.proposed_arg}", obs)
         self.criticism = ""
