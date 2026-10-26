@@ -52,6 +52,26 @@ Set `SEARCH_PROVIDER=duckduckgo` to select DuckDuckGo explicitly, or
 socket timeout; Ctrl-C interrupts a request. URL ingestion still uses MiniAGI's
 existing `ingest_data` and `process_data` commands.
 
+### Publishing a page (optional)
+
+Set `DEEDPAGE_PUBLISH=true` in `.env` to add a `publish_page` command. The agent
+can then write an HTML file (a report, chart or small demo) with `execute_python`
+and publish it to a public `https://<slug>.deed.page/` URL through the
+[deed.page](https://deed.page) MCP server, with no account, API key or extra
+dependencies. The command is not listed in the prompt unless enabled, and the
+existing `PROMPT_USER` confirmation still applies. Published pages are public, so
+do not publish secrets. Set `DEEDPAGE_TTL` (seconds) to make pages expire.
+
+The first publish returns an owner token. MiniAGI prints it in the terminal and
+does not add it to the agent's memory. Keep it to delete the page:
+
+```
+DEEDPAGE_TOKEN=... python deed_page.py --delete <slug>
+```
+
+`python deed_page.py page.html --ttl 3600` publishes a file without the agent.
+Docs: https://deed.page/docs
+
 **Safety and privacy advisory: The agent may inadvertently suggest harmful commands or code. Proceed with caution and use at your own discretion. Be aware that, depending on your settings and requirements, the agent might share your data with third-party API providers such as OpenAI.**
 
 ### Examples

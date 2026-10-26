@@ -307,7 +307,7 @@ class MiniAGI:
             print(context)
 
         response_text = self.agent.predict(
-            prompt=PROMPT.format(context=context, objective=self.objective)
+            prompt=command_prompt().format(context=context, objective=self.objective)
         )
 
         if self.debug:
@@ -460,6 +460,17 @@ class MiniAGI:
         """
         self.__update_memory(f"{self.proposed_command}\n{self.proposed_arg}", response)
         self.criticism = ""
+
+def command_prompt() -> str:
+    """
+    Returns the agent prompt, listing publish_page only when DEEDPAGE_PUBLISH is enabled.
+    """
+    if not get_bool_env("DEEDPAGE_PUBLISH"):
+        return PROMPT
+    return PROMPT.replace(
+        "talk_to_user | what to say",
+        "publish_page | path to an HTML file (publishes it at a public URL)\n"
+        "talk_to_user | what to say", 1)
 
 def get_bool_env(env_var: str) -> bool:
     '''

@@ -8,6 +8,7 @@ from io import StringIO
 from contextlib import redirect_stdout
 from duckduckgo_search import DDGS
 from parallel_search import search as parallel_search
+import deed_page
 
 
 # pylint: disable=broad-exception-caught, exec-used, unspecified-encoding
@@ -42,6 +43,8 @@ class Commands:
                     result = Commands.execute_shell(arg)
                 case "web_search":
                     result = Commands.web_search(arg, search_provider, search_session_id)
+                case "publish_page":
+                    result = Commands.publish_page(arg)
                 case _:
                     result = f"Unknown command: {command}"
         except Exception as exception:
@@ -125,3 +128,24 @@ class Commands:
         ddgs_text_gen = ddgs.text(arg)
 
         return str(list(ddgs_text_gen)[:5])
+
+    @staticmethod
+    def publish_page(arg: str) -> str:
+        """
+        Publishes an HTML file to a public deed.page URL when DEEDPAGE_PUBLISH is enabled.
+
+        Args:
+            arg (str): Path of the HTML file to publish.
+
+        Returns:
+            str: The public URL. The owner token is printed for the user, not returned.
+        """
+        if os.getenv("DEEDPAGE_PUBLISH", "").lower() not in ("true", "1", "t", "y", "yes"):
+            return "Page publishing is disabled (set DEEDPAGE_PUBLISH=true to enable it)."
+        ttl = os.getenv("DEEDPAGE_TTL") or None
+        result = deed_page.publish(arg, ttl_seconds=int(ttl) if ttl else None)
+        if result.get("token"):
+            # Keep the owner token out of the model context; show it to the user only.
+            print(f"deed.page owner token for {result.get('slug')} "
+                  f"(keep it to update or delete the page): {result['token']}")
+        return f"Published publicly at {result.get('url')}"
