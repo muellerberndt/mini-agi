@@ -8,6 +8,7 @@ from io import StringIO
 from contextlib import redirect_stdout
 from duckduckgo_search import DDGS
 from parallel_search import search as parallel_search
+from outcrawl_search import search as outcrawl_search
 
 
 # pylint: disable=broad-exception-caught, exec-used, unspecified-encoding
@@ -117,8 +118,10 @@ class Commands:
             return "Web search is disabled (SEARCH_PROVIDER=none)."
         if provider == "parallel":
             return parallel_search(arg, session_id)
+        if provider == "outcrawl":
+            return outcrawl_search(arg)
         if provider != "duckduckgo":
-            raise ValueError("SEARCH_PROVIDER must be duckduckgo, parallel, or none")
+            raise ValueError("SEARCH_PROVIDER must be duckduckgo, parallel, outcrawl, or none")
 
         ddgs = DDGS()
 

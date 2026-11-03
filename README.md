@@ -46,9 +46,16 @@ and excerpts, powered by Fast mode, without a Parallel account or API key. No
 additional dependencies are needed. Queries are sent to Parallel; free usage is
 rate limited. Provider errors are returned to the agent without switching providers.
 
+To use [Outcrawl](https://outcrawl.ai) search, set `SEARCH_PROVIDER=outcrawl` and
+`OUTCRAWL_API_KEY` in `.env` (create a key at https://outcrawl.ai/console/keys; the
+free tier has 1,000 credits a month). It returns up to five results with title, URL
+and snippet. No additional dependencies are needed. Queries are sent to Outcrawl;
+errors such as an invalid key or spent credits are returned to the agent without
+switching providers.
+
 Set `SEARCH_PROVIDER=duckduckgo` to select DuckDuckGo explicitly, or
 `SEARCH_PROVIDER=none` to disable the `web_search` command. The existing
-`PROMPT_USER` confirmation still applies. Parallel requests have a 30-second
+`PROMPT_USER` confirmation still applies. Parallel and Outcrawl requests have a 30-second
 socket timeout; Ctrl-C interrupts a request. URL ingestion still uses MiniAGI's
 existing `ingest_data` and `process_data` commands.
 

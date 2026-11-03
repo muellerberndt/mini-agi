@@ -15,6 +15,7 @@ from urllib.error import HTTPError
 
 from miniagi import MiniAGI
 import parallel_search
+import outcrawl_search
 
 
 class Response(io.BytesIO):
@@ -250,6 +251,103 @@ class SearchTests(TestCase):
             with self.subTest(payload=payload), \
                     patch("parallel_search.urlopen", side_effect=broken):
                 self.assertIn("Command returned an error", self.act(make_agent("parallel")))
+
+
+class OutcrawlSearchTests(TestCase):
+    """Verify the Outcrawl provider through the agent's dispatcher and REST wire I/O."""
+
+    def setUp(self):
+        self.environment = patch.dict(os.environ, {"OUTCRAWL_API_KEY": " outcrawl-key "},
+                                      clear=True)
+        self.environment.start()
+        self.addCleanup(self.environment.stop)
+        self.requests = []
+        self.failure = None
+        self.body = {"hits": [
+            {"url": "https://docs.python.org/3/", "title": "Python documentation",
+             "snippet": "Language reference", "rank": 1},
+            {"title": "no url", "snippet": "dropped", "rank": 2},
+            {"url": "https://peps.python.org/", "rank": 3},
+        ], "usage": {"credits": "1.5"}}
+
+    def transport(self, request, timeout):
+        """Observe the outbound request: destination, identification, key and body."""
+        self.assertEqual(request.full_url, "https://api.outcrawl.ai/v1/search")
+        self.assertEqual(request.method, "POST")
+        self.assertEqual(timeout, 30)
+        self.assertEqual(request.get_header("User-agent"), outcrawl_search.USER_AGENT)
+        self.assertEqual(request.get_header("Authorization"), "Bearer outcrawl-key")
+        self.requests.append(json.loads(request.data))
+        if self.failure:
+            raise self.failure
+        return Response(json.dumps(self.body).encode())
+
+    def test_results_reach_memory(self):
+        """Hits with a URL become title, URL and snippet blocks; nothing falls back."""
+        with patch("outcrawl_search.urlopen", side_effect=self.transport), \
+                patch("parallel_search.urlopen") as parallel, patch("commands.DDGS") as ddgs:
+            memory = SearchTests.act(make_agent("outcrawl"))
+            parallel.assert_not_called()
+            ddgs.assert_not_called()
+        self.assertEqual(self.requests, [{"query": "Python reference manual", "limit": 5}])
+        self.assertIn("Python documentation\nhttps://docs.python.org/3/\nLanguage reference",
+                      memory)
+        self.assertIn("https://peps.python.org/\nhttps://peps.python.org/", memory)
+        self.assertNotIn("dropped", memory)
+
+    def test_env_choice(self):
+        """SEARCH_PROVIDER=outcrawl selects Outcrawl at agent creation."""
+        with patch.dict(os.environ, {"SEARCH_PROVIDER": "outcrawl"}), \
+                patch("outcrawl_search.urlopen", side_effect=self.transport):
+            self.assertIn("Python documentation", SearchTests.act(make_agent()))
+        self.assertEqual(len(self.requests), 1)
+
+    def test_missing_key_and_empty_query_never_contact_service(self):
+        """Local validation runs before any request."""
+        with patch("outcrawl_search.urlopen") as network:
+            self.assertIn("must not be empty", SearchTests.act(make_agent("outcrawl"), "  "))
+            for value in (None, "  "):
+                with self.subTest(value=value), patch.dict(os.environ):
+                    if value is None:
+                        del os.environ["OUTCRAWL_API_KEY"]
+                    else:
+                        os.environ["OUTCRAWL_API_KEY"] = value
+                    self.assertIn("OUTCRAWL_API_KEY must be set",
+                                  SearchTests.act(make_agent("outcrawl")))
+            network.assert_not_called()
+
+    def test_http_errors_become_observations(self):
+        """Key, credit and rate-limit failures reach the agent without switching providers."""
+        for code, reason in ((401, "invalid OUTCRAWL_API_KEY"), (402, "out of credits"),
+                             (429, "rate limited"), (500, "Internal Server Error")):
+            self.failure = HTTPError(outcrawl_search.ENDPOINT, code, "Internal Server Error",
+                                     {}, None)
+            with self.subTest(code=code), \
+                    patch("outcrawl_search.urlopen", side_effect=self.transport), \
+                    patch("commands.DDGS") as ddgs:
+                memory = SearchTests.act(make_agent("outcrawl"))
+                self.assertIn("Command returned an error", memory)
+                self.assertIn(f"Outcrawl HTTP error {code}: {reason}", memory)
+                ddgs.assert_not_called()
+
+    def test_malformed_and_empty_responses(self):
+        """Invalid payloads are errors; an empty hit list is a normal observation."""
+        for body, expected in ((b"invalid json", "Command returned an error"),
+                               (b'{"error":"x"}', "Outcrawl response has no hits"),
+                               (b"x" * (outcrawl_search.MAX_RESPONSE_BYTES + 1), "too large"),
+                               (b'{"hits":[]}', "No results found.")):
+            with self.subTest(body=body[:20]), \
+                    patch("outcrawl_search.urlopen", return_value=Response(body)):
+                self.assertIn(expected, SearchTests.act(make_agent("outcrawl")))
+
+    def test_cancellation_propagates(self):
+        """Ctrl-C aborts instead of becoming an observation."""
+        self.failure = KeyboardInterrupt()
+        with patch("outcrawl_search.urlopen", side_effect=self.transport):
+            agent = make_agent("outcrawl")
+            with self.assertRaises(KeyboardInterrupt):
+                SearchTests.act(agent)
+            self.assertEqual(agent.agent.memory, [])
 
 
 if __name__ == "__main__":
