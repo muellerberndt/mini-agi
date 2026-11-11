@@ -54,8 +54,8 @@ errors such as an invalid key or spent credits are returned to the agent without
 switching providers.
 
 To use [SpecStream](https://specstream.ai/search-api) search, set
-`SEARCH_PROVIDER=specstream` and `SPECSTREAM_API_KEY` in `.env` (create a key under
-Agents & API in the SpecStream workspace). It returns up to five results with title, URL,
+`SEARCH_PROVIDER=specstream` and `SPECSTREAM_API_KEY` in `.env` (create a key at
+https://specstream.ai/signup?src=mini-agi, under Agents & API). It returns up to five results with title, URL,
 snippet and, when the page has one, publish date. No additional dependencies are needed.
 Queries are sent to SpecStream; errors such as an invalid key or an empty balance are
 returned to the agent without switching providers.
