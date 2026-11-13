@@ -12,10 +12,12 @@ from unittest import TestCase, main
 from unittest.mock import patch
 from pathlib import Path
 from urllib.error import HTTPError
+from urllib.parse import parse_qs, urlsplit
 
 from miniagi import MiniAGI
 import parallel_search
 import outcrawl_search
+import specstream_search
 
 
 class Response(io.BytesIO):
@@ -345,6 +347,113 @@ class OutcrawlSearchTests(TestCase):
         self.failure = KeyboardInterrupt()
         with patch("outcrawl_search.urlopen", side_effect=self.transport):
             agent = make_agent("outcrawl")
+            with self.assertRaises(KeyboardInterrupt):
+                SearchTests.act(agent)
+            self.assertEqual(agent.agent.memory, [])
+
+
+class SpecStreamSearchTests(TestCase):
+    """Verify the SpecStream provider through the agent's dispatcher and REST wire I/O."""
+
+    def setUp(self):
+        self.environment = patch.dict(os.environ, {"SPECSTREAM_API_KEY": " specstream-key "},
+                                      clear=True)
+        self.environment.start()
+        self.addCleanup(self.environment.stop)
+        self.requests = []
+        self.failure = None
+        sources = [
+            {"url": "https://docs.python.org/3/", "title": "Python documentation",
+             "site": "docs.python.org", "snippet": "Language reference", "cited": True,
+             "published": "2026-10-01"},
+            {"url": "", "title": "no url", "site": "", "snippet": "dropped", "cited": False},
+            {"url": "https://peps.python.org/", "title": "", "site": "peps.python.org",
+             "snippet": "", "cited": False},
+        ]
+        self.body = {"data": {"request_id": "r1", "query": "Python reference manual",
+                              "kind": "fact", "columns": [], "answer": None, "rows": [],
+                              "sources": sources, "handoff": None, "took_ms": 900,
+                              "price_usd": 0.005}}
+
+    def transport(self, request, timeout):
+        """Observe the outbound request: destination, identification, key and query."""
+        url = urlsplit(request.full_url)
+        self.assertEqual(f"{url.scheme}://{url.netloc}{url.path}", specstream_search.ENDPOINT)
+        self.assertEqual(request.method, "GET")
+        self.assertIsNone(request.data)
+        self.assertEqual(timeout, 30)
+        self.assertEqual(request.get_header("User-agent"), specstream_search.USER_AGENT)
+        self.assertEqual(request.get_header("Authorization"), "Bearer specstream-key")
+        self.requests.append(parse_qs(url.query))
+        if self.failure:
+            raise self.failure
+        return Response(json.dumps(self.body).encode())
+
+    def test_results_reach_memory(self):
+        """Sources with a URL become title, URL, date and snippet blocks; nothing falls back."""
+        with patch("specstream_search.urlopen", side_effect=self.transport), \
+                patch("outcrawl_search.urlopen") as outcrawl, patch("commands.DDGS") as ddgs:
+            memory = SearchTests.act(make_agent("specstream"))
+            outcrawl.assert_not_called()
+            ddgs.assert_not_called()
+        self.assertEqual(self.requests, [{"q": ["Python reference manual"], "num": ["5"]}])
+        self.assertIn("Python documentation\nhttps://docs.python.org/3/\n"
+                      "Published: 2026-10-01\nLanguage reference", memory)
+        self.assertIn("https://peps.python.org/\nhttps://peps.python.org/", memory)
+        self.assertNotIn("dropped", memory)
+
+    def test_env_choice(self):
+        """SEARCH_PROVIDER=specstream selects SpecStream at agent creation."""
+        with patch.dict(os.environ, {"SEARCH_PROVIDER": "specstream"}), \
+                patch("specstream_search.urlopen", side_effect=self.transport):
+            self.assertIn("Python documentation", SearchTests.act(make_agent()))
+        self.assertEqual(len(self.requests), 1)
+
+    def test_missing_key_and_empty_query_never_contact_service(self):
+        """Local validation runs before any request."""
+        with patch("specstream_search.urlopen") as network:
+            self.assertIn("must not be empty", SearchTests.act(make_agent("specstream"), "  "))
+            for value in (None, "  "):
+                with self.subTest(value=value), patch.dict(os.environ):
+                    if value is None:
+                        del os.environ["SPECSTREAM_API_KEY"]
+                    else:
+                        os.environ["SPECSTREAM_API_KEY"] = value
+                    self.assertIn("SPECSTREAM_API_KEY must be set",
+                                  SearchTests.act(make_agent("specstream")))
+            network.assert_not_called()
+
+    def test_http_errors_become_observations(self):
+        """Key, balance, limit and busy failures reach the agent without switching providers."""
+        for code, reason in ((401, "invalid SPECSTREAM_API_KEY"), (402, "out of balance"),
+                             (403, "over the key's spending limit"),
+                             (503, "busy or rate limited"), (500, "Internal Server Error")):
+            self.failure = HTTPError(specstream_search.ENDPOINT, code, "Internal Server Error",
+                                     {}, None)
+            with self.subTest(code=code), \
+                    patch("specstream_search.urlopen", side_effect=self.transport), \
+                    patch("commands.DDGS") as ddgs:
+                memory = SearchTests.act(make_agent("specstream"))
+                self.assertIn("Command returned an error", memory)
+                self.assertIn(f"SpecStream HTTP error {code}: {reason}", memory)
+                ddgs.assert_not_called()
+
+    def test_malformed_and_empty_responses(self):
+        """Invalid payloads are errors; an empty source list is a normal observation."""
+        for body, expected in ((b"invalid json", "Command returned an error"),
+                               (b'{"error":{"code":"x","message":"x"}}',
+                                "SpecStream response has no sources"),
+                               (b"x" * (specstream_search.MAX_RESPONSE_BYTES + 1), "too large"),
+                               (b'{"data":{"sources":[]}}', "No results found.")):
+            with self.subTest(body=body[:20]), \
+                    patch("specstream_search.urlopen", return_value=Response(body)):
+                self.assertIn(expected, SearchTests.act(make_agent("specstream")))
+
+    def test_cancellation_propagates(self):
+        """Ctrl-C aborts instead of becoming an observation."""
+        self.failure = KeyboardInterrupt()
+        with patch("specstream_search.urlopen", side_effect=self.transport):
+            agent = make_agent("specstream")
             with self.assertRaises(KeyboardInterrupt):
                 SearchTests.act(agent)
             self.assertEqual(agent.agent.memory, [])
