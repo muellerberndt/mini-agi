@@ -16,6 +16,7 @@ from urllib.error import HTTPError
 from miniagi import MiniAGI
 import parallel_search
 import outcrawl_search
+import keenable_search
 
 
 class Response(io.BytesIO):
@@ -345,6 +346,106 @@ class OutcrawlSearchTests(TestCase):
         self.failure = KeyboardInterrupt()
         with patch("outcrawl_search.urlopen", side_effect=self.transport):
             agent = make_agent("outcrawl")
+            with self.assertRaises(KeyboardInterrupt):
+                SearchTests.act(agent)
+            self.assertEqual(agent.agent.memory, [])
+
+
+class KeenableSearchTests(TestCase):
+    """Verify the Keenable provider through the agent's dispatcher and REST wire I/O."""
+
+    def setUp(self):
+        self.environment = patch.dict(os.environ, {}, clear=True)
+        self.environment.start()
+        self.addCleanup(self.environment.stop)
+        self.requests = []
+        self.failure = None
+        self.key = None
+        self.body = {"query": "Python reference manual", "mode": "pro", "results": [
+            {"url": "https://docs.python.org/3/", "title": "Python documentation",
+             "snippet": "Language reference", "description": ""},
+            {"title": "no url", "snippet": "dropped"},
+            {"url": "https://peps.python.org/"},
+        ]}
+
+    def transport(self, request, timeout):
+        """Observe destination, identification, key, title header and body."""
+        self.assertEqual(request.method, "POST")
+        self.assertEqual(timeout, 30)
+        self.assertEqual(request.get_header("User-agent"), keenable_search.USER_AGENT)
+        if self.key:
+            self.assertEqual(request.full_url, "https://api.keenable.ai/v1/search")
+            self.assertEqual(request.get_header("X-api-key"), self.key)
+            self.assertIsNone(request.get_header("X-keenable-title"))
+        else:
+            self.assertEqual(request.full_url, "https://api.keenable.ai/v1/search/public")
+            self.assertIsNone(request.get_header("X-api-key"))
+            self.assertEqual(request.get_header("X-keenable-title"), "MiniAGI")
+        self.requests.append(json.loads(request.data))
+        if self.failure:
+            raise self.failure
+        return Response(json.dumps(self.body).encode())
+
+    def test_keyless_results_reach_memory(self):
+        """Without a key the public endpoint is used; nothing falls back."""
+        with patch("keenable_search.urlopen", side_effect=self.transport), \
+                patch("outcrawl_search.urlopen") as outcrawl, \
+                patch("parallel_search.urlopen") as parallel, patch("commands.DDGS") as ddgs:
+            memory = SearchTests.act(make_agent("keenable"))
+            outcrawl.assert_not_called()
+            parallel.assert_not_called()
+            ddgs.assert_not_called()
+        self.assertEqual(self.requests, [{"query": "Python reference manual", "max_results": 5,
+                                          "snippet_max_length": 500}])
+        self.assertIn("Python documentation\nhttps://docs.python.org/3/\nLanguage reference",
+                      memory)
+        self.assertIn("https://peps.python.org/\nhttps://peps.python.org/", memory)
+        self.assertNotIn("dropped", memory)
+
+    def test_keyed_request_and_env_choice(self):
+        """SEARCH_PROVIDER=keenable with KEENABLE_API_KEY uses the keyed endpoint."""
+        self.key = "keenable-key"
+        with patch.dict(os.environ, {"SEARCH_PROVIDER": "keenable",
+                                     "KEENABLE_API_KEY": " keenable-key "}), \
+                patch("keenable_search.urlopen", side_effect=self.transport):
+            self.assertIn("Python documentation", SearchTests.act(make_agent()))
+        self.assertEqual(len(self.requests), 1)
+
+    def test_empty_query_never_contacts_service(self):
+        """Local validation runs before any request."""
+        with patch("keenable_search.urlopen") as network:
+            self.assertIn("must not be empty", SearchTests.act(make_agent("keenable"), "  "))
+            network.assert_not_called()
+
+    def test_http_errors_become_observations(self):
+        """Key, credit and rate-limit failures reach the agent without switching providers."""
+        for code, reason in ((401, "invalid KEENABLE_API_KEY"), (402, "out of credits"),
+                             (429, "rate limited"), (500, "Internal Server Error")):
+            self.failure = HTTPError(keenable_search.PUBLIC_ENDPOINT, code,
+                                     "Internal Server Error", {}, None)
+            with self.subTest(code=code), \
+                    patch("keenable_search.urlopen", side_effect=self.transport), \
+                    patch("commands.DDGS") as ddgs:
+                memory = SearchTests.act(make_agent("keenable"))
+                self.assertIn("Command returned an error", memory)
+                self.assertIn(f"Keenable HTTP error {code}: {reason}", memory)
+                ddgs.assert_not_called()
+
+    def test_malformed_and_empty_responses(self):
+        """Invalid payloads are errors; an empty result list is a normal observation."""
+        for body, expected in ((b"invalid json", "Command returned an error"),
+                               (b'{"error":"x"}', "Keenable response has no results"),
+                               (b"x" * (keenable_search.MAX_RESPONSE_BYTES + 1), "too large"),
+                               (b'{"results":[]}', "No results found.")):
+            with self.subTest(body=body[:20]), \
+                    patch("keenable_search.urlopen", return_value=Response(body)):
+                self.assertIn(expected, SearchTests.act(make_agent("keenable")))
+
+    def test_cancellation_propagates(self):
+        """Ctrl-C aborts instead of becoming an observation."""
+        self.failure = KeyboardInterrupt()
+        with patch("keenable_search.urlopen", side_effect=self.transport):
+            agent = make_agent("keenable")
             with self.assertRaises(KeyboardInterrupt):
                 SearchTests.act(agent)
             self.assertEqual(agent.agent.memory, [])
